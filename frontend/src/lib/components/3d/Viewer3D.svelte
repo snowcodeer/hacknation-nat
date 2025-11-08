@@ -2,25 +2,38 @@
 	import { onMount } from 'svelte';
 	import * as THREE from 'three';
 	import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-	import { currentModel } from '$lib/stores/modelStore';
+	import { aircraft, activeComponent, allComponents } from '$lib/stores/aircraftStore';
+
+	export let viewMode: 'edit' | 'assembly' = 'edit';
 
 	let container: HTMLDivElement;
 	let renderer: THREE.WebGLRenderer;
 	let scene: THREE.Scene;
 	let camera: THREE.PerspectiveCamera;
 	let controls: OrbitControls;
-	let modelMesh: THREE.Mesh | null = null;
+	let modelMeshes: THREE.Group = new THREE.Group();
 	let animationId: number;
+
+	const componentColors: Record<string, number> = {
+		wings: 0x3b82f6,          // Blue
+		fuselage: 0x10b981,       // Green
+		tail_assembly: 0xf59e0b,  // Orange
+		engines: 0x8b5cf6         // Purple
+	};
 
 	function init() {
 		// Scene
 		scene = new THREE.Scene();
 		scene.background = new THREE.Color(0x1e3a8a);
 
+		// Get container dimensions
+		const width = container.clientWidth || 800;
+		const height = container.clientHeight || 600;
+
 		// Camera
 		camera = new THREE.PerspectiveCamera(
 			75,
-			container.clientWidth / container.clientHeight,
+			width / height,
 			0.1,
 			1000
 		);
@@ -29,7 +42,7 @@
 
 		// Renderer
 		renderer = new THREE.WebGLRenderer({ antialias: true });
-		renderer.setSize(container.clientWidth, container.clientHeight);
+		renderer.setSize(width, height);
 		renderer.setPixelRatio(window.devicePixelRatio);
 		renderer.shadowMap.enabled = true;
 		container.appendChild(renderer.domElement);
@@ -66,6 +79,9 @@
 		const axesHelper = new THREE.AxesHelper(2);
 		scene.add(axesHelper);
 
+		// Add model group to scene
+		scene.add(modelMeshes);
+
 		// Handle window resize
 		window.addEventListener('resize', onWindowResize);
 
@@ -75,7 +91,7 @@
 
 	function onWindowResize() {
 		if (!container || !camera || !renderer) return;
-		
+
 		camera.aspect = container.clientWidth / container.clientHeight;
 		camera.updateProjectionMatrix();
 		renderer.setSize(container.clientWidth, container.clientHeight);
@@ -83,36 +99,23 @@
 
 	function animate() {
 		animationId = requestAnimationFrame(animate);
-		
+
 		if (controls) controls.update();
 		if (renderer && scene && camera) {
 			renderer.render(scene, camera);
 		}
 	}
 
-	function updateModel(model: typeof $currentModel) {
-		if (!scene || !model) return;
-
-		// Remove old mesh
-		if (modelMesh) {
-			scene.remove(modelMesh);
-			modelMesh.geometry.dispose();
-			if (Array.isArray(modelMesh.material)) {
-				modelMesh.material.forEach(m => m.dispose());
-			} else {
-				modelMesh.material.dispose();
-			}
-		}
-
+	function createMeshFromModel(model: any, componentType: string, position: THREE.Vector3) {
 		// Create geometry
 		const geometry = new THREE.BufferGeometry();
-		
+
 		const vertices = new Float32Array(model.geometry.vertices);
 		const indices = new Uint32Array(model.geometry.indices);
-		
+
 		geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
 		geometry.setIndex(new THREE.BufferAttribute(indices, 1));
-		
+
 		if (model.geometry.normals) {
 			const normals = new Float32Array(model.geometry.normals);
 			geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
@@ -120,34 +123,146 @@
 			geometry.computeVertexNormals();
 		}
 
-		// Create material
+		// Create material with component-specific color
+		const color = componentColors[componentType] || 0x3b82f6;
 		const material = new THREE.MeshStandardMaterial({
-			color: 0x3b82f6,
+			color,
 			metalness: 0.4,
 			roughness: 0.3,
 			side: THREE.DoubleSide
 		});
 
 		// Create mesh
-		modelMesh = new THREE.Mesh(geometry, material);
-		modelMesh.position.set(0, 0.5, 0);
-		modelMesh.castShadow = true;
-		modelMesh.receiveShadow = true;
-		scene.add(modelMesh);
+		const mesh = new THREE.Mesh(geometry, material);
+		mesh.position.copy(position);
+		mesh.castShadow = true;
+		mesh.receiveShadow = true;
 
-		// Add wireframe
-		const wireframeGeometry = geometry.clone();
-		const wireframeMaterial = new THREE.MeshBasicMaterial({
-			color: 0x60a5fa,
-			wireframe: true,
-			transparent: true,
-			opacity: 0.3
-		});
-		const wireframe = new THREE.Mesh(wireframeGeometry, wireframeMaterial);
-		wireframe.position.copy(modelMesh.position);
-		scene.add(wireframe);
+		return { mesh, geometry };
+	}
 
-		console.log('Model added to scene:', model.name);
+	function updateModels() {
+		if (!scene) return;
+
+		// Clear existing models
+		modelMeshes.clear();
+
+		if (viewMode === 'assembly') {
+			// Show all components in assembly mode
+			const aircraftData = $aircraft;
+
+			// Wings - centered
+			if (aircraftData.wings.model) {
+				const { mesh, geometry } = createMeshFromModel(
+					aircraftData.wings.model,
+					'wings',
+					new THREE.Vector3(0, 0.5, 0)
+				);
+				modelMeshes.add(mesh);
+
+				// Add wireframe
+				const wireframeMaterial = new THREE.MeshBasicMaterial({
+					color: componentColors.wings,
+					wireframe: true,
+					transparent: true,
+					opacity: 0.2
+				});
+				const wireframe = new THREE.Mesh(geometry.clone(), wireframeMaterial);
+				wireframe.position.copy(mesh.position);
+				modelMeshes.add(wireframe);
+			}
+
+			// Fuselage - centered
+			if (aircraftData.fuselage.model) {
+				const { mesh, geometry } = createMeshFromModel(
+					aircraftData.fuselage.model,
+					'fuselage',
+					new THREE.Vector3(0, 0.5, 0)
+				);
+				modelMeshes.add(mesh);
+
+				// Add wireframe
+				const wireframeMaterial = new THREE.MeshBasicMaterial({
+					color: componentColors.fuselage,
+					wireframe: true,
+					transparent: true,
+					opacity: 0.2
+				});
+				const wireframe = new THREE.Mesh(geometry.clone(), wireframeMaterial);
+				wireframe.position.copy(mesh.position);
+				modelMeshes.add(wireframe);
+			}
+
+			// Tail assembly - behind at tail position
+			if (aircraftData.tail_assembly.model) {
+				const { mesh, geometry } = createMeshFromModel(
+					aircraftData.tail_assembly.model,
+					'tail_assembly',
+					new THREE.Vector3(0, 0.6, -1.2)
+				);
+				modelMeshes.add(mesh);
+
+				// Add wireframe
+				const wireframeMaterial = new THREE.MeshBasicMaterial({
+					color: componentColors.tail_assembly,
+					wireframe: true,
+					transparent: true,
+					opacity: 0.2
+				});
+				const wireframe = new THREE.Mesh(geometry.clone(), wireframeMaterial);
+				wireframe.position.copy(mesh.position);
+				modelMeshes.add(wireframe);
+			}
+
+			// Engines - under wings
+			if (aircraftData.engines.model) {
+				const { mesh, geometry } = createMeshFromModel(
+					aircraftData.engines.model,
+					'engines',
+					new THREE.Vector3(0, 0.2, 0.3)
+				);
+				modelMeshes.add(mesh);
+
+				// Add wireframe
+				const wireframeMaterial = new THREE.MeshBasicMaterial({
+					color: componentColors.engines,
+					wireframe: true,
+					transparent: true,
+					opacity: 0.2
+				});
+				const wireframe = new THREE.Mesh(geometry.clone(), wireframeMaterial);
+				wireframe.position.copy(mesh.position);
+				modelMeshes.add(wireframe);
+			}
+
+			console.log('Assembly view: Showing', $allComponents.length, 'components');
+		} else {
+			// Show only active component in edit mode
+			const activeComp = $aircraft[$activeComponent];
+			if (!activeComp || !activeComp.model) return;
+
+			const model = activeComp.model;
+			const { mesh, geometry } = createMeshFromModel(
+				model,
+				$activeComponent,
+				new THREE.Vector3(0, 0.5, 0)
+			);
+			modelMeshes.add(mesh);
+
+			// Add wireframe
+			const color = componentColors[$activeComponent] || 0x3b82f6;
+			const wireframeMaterial = new THREE.MeshBasicMaterial({
+				color,
+				wireframe: true,
+				transparent: true,
+				opacity: 0.3
+			});
+			const wireframe = new THREE.Mesh(geometry.clone(), wireframeMaterial);
+			wireframe.position.copy(mesh.position);
+			modelMeshes.add(wireframe);
+
+			console.log('Edit mode: Showing', model.name);
+		}
 	}
 
 	onMount(() => {
@@ -168,8 +283,13 @@
 	});
 
 	// React to model changes
-	$: if (scene && $currentModel) {
-		updateModel($currentModel);
+	$: if (scene && $aircraft && ($activeComponent || viewMode === 'assembly')) {
+		updateModels();
+	}
+
+	// React to view mode changes
+	$: if (scene && viewMode) {
+		updateModels();
 	}
 </script>
 

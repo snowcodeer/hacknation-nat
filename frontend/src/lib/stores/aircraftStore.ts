@@ -1,7 +1,7 @@
 import { writable, derived } from 'svelte/store';
 import type { Model3D } from '$lib/types/model';
 
-export type ComponentType = 'wing' | 'fuselage' | 'vertical_stabilizer' | 'horizontal_stabilizer';
+export type ComponentType = 'wings' | 'fuselage' | 'tail_assembly' | 'engines';
 
 export interface AircraftComponent {
 	type: ComponentType;
@@ -11,43 +11,54 @@ export interface AircraftComponent {
 }
 
 export interface Aircraft {
-	wing: AircraftComponent;
+	wings: AircraftComponent;
 	fuselage: AircraftComponent;
-	verticalStabilizer: AircraftComponent;
-	horizontalStabilizer: AircraftComponent;
+	tail_assembly: AircraftComponent;
+	engines: AircraftComponent;
 }
 
 const initialAircraft: Aircraft = {
-	wing: { type: 'wing', model: null, isGenerating: false, error: null },
+	wings: { type: 'wings', model: null, isGenerating: false, error: null },
 	fuselage: { type: 'fuselage', model: null, isGenerating: false, error: null },
-	verticalStabilizer: { type: 'vertical_stabilizer', model: null, isGenerating: false, error: null },
-	horizontalStabilizer: { type: 'horizontal_stabilizer', model: null, isGenerating: false, error: null }
+	tail_assembly: { type: 'tail_assembly', model: null, isGenerating: false, error: null },
+	engines: { type: 'engines', model: null, isGenerating: false, error: null }
 };
 
 // Main aircraft store
 export const aircraft = writable<Aircraft>(initialAircraft);
 
 // Current active component being edited
-export const activeComponent = writable<ComponentType>('wing');
+export const activeComponent = writable<ComponentType>('wings');
+
+// Compiled aircraft model (all components merged into one)
+export const compiledAircraft = writable<Model3D | null>(null);
+
+// Compilation status
+export const isCompiling = writable<boolean>(false);
 
 // Derived: completion status
 export const completionStatus = derived(aircraft, ($aircraft) => ({
-	wing: $aircraft.wing.model !== null,
+	wings: $aircraft.wings.model !== null,
 	fuselage: $aircraft.fuselage.model !== null,
-	verticalStabilizer: $aircraft.verticalStabilizer.model !== null,
-	horizontalStabilizer: $aircraft.horizontalStabilizer.model !== null
+	tail_assembly: $aircraft.tail_assembly.model !== null,
+	engines: $aircraft.engines.model !== null
 }));
 
-// Derived: is assembly ready (at least wing is complete)
-export const isAssemblyReady = derived(completionStatus, ($status) => $status.wing);
+// Derived: is assembly ready (at least wings is complete)
+export const isAssemblyReady = derived(completionStatus, ($status) => $status.wings);
+
+// Derived: all components complete (ready to compile)
+export const allComponentsComplete = derived(completionStatus, ($status) =>
+	$status.wings && $status.fuselage && $status.tail_assembly && $status.engines
+);
 
 // Derived: all components for 3D viewer
 export const allComponents = derived(aircraft, ($aircraft) => {
 	const components: Model3D[] = [];
-	if ($aircraft.wing.model) components.push($aircraft.wing.model);
+	if ($aircraft.wings.model) components.push($aircraft.wings.model);
 	if ($aircraft.fuselage.model) components.push($aircraft.fuselage.model);
-	if ($aircraft.verticalStabilizer.model) components.push($aircraft.verticalStabilizer.model);
-	if ($aircraft.horizontalStabilizer.model) components.push($aircraft.horizontalStabilizer.model);
+	if ($aircraft.tail_assembly.model) components.push($aircraft.tail_assembly.model);
+	if ($aircraft.engines.model) components.push($aircraft.engines.model);
 	return components;
 });
 
@@ -98,5 +109,6 @@ export function clearComponent(componentType: ComponentType) {
 
 export function resetAircraft() {
 	aircraft.set(initialAircraft);
-	activeComponent.set('wing');
+	activeComponent.set('wings');
+	compiledAircraft.set(null);
 }

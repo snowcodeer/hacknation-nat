@@ -179,16 +179,137 @@ class GeometryService:
             source_prompt=source_prompt
         )
 
+        # Determine component type based on parameters
+        component_name = self._determine_component_name(params, source_prompt)
+
         # Create model
         model = Model3D(
             id=str(uuid.uuid4()),
-            name=f"{params.wing_type.capitalize()} Wing",
+            name=component_name,
             parameters=params,
             geometry=geometry,
             metadata=metadata
         )
 
         return model
+
+    def _determine_component_name(self, params: AeroParameters, source_prompt: str = None) -> str:
+        """
+        Determine the component name based on parameters and source prompt.
+        """
+        prompt_lower = (source_prompt or "").lower()
+
+        # Check for fuselage indicators
+        if params.fuselage_length and params.fuselage_diameter:
+            if params.fuselage_diameter > 0.5:  # Significant diameter
+                return f"{params.wing_type.capitalize()} Fuselage"
+
+        # Check prompt for component type keywords
+        if "fuselage" in prompt_lower:
+            return f"{params.wing_type.capitalize()} Fuselage"
+        elif "tail" in prompt_lower or "stabilizer" in prompt_lower:
+            return "Tail Assembly"
+        elif "engine" in prompt_lower:
+            return "Engine"
+        elif "wing" in prompt_lower or "wings" in prompt_lower:
+            return f"{params.wing_type.capitalize()} Wing"
+
+        # Default based on parameters
+        if params.thickness > 70:  # Very thick - likely fuselage
+            return f"{params.wing_type.capitalize()} Fuselage"
+        else:
+            return f"{params.wing_type.capitalize()} Wing"
+
+
+    def compile_aircraft_components(self, components: list, component_names: list) -> Model3D:
+        """
+        Compile multiple aircraft components into a single unified model.
+        Merges all geometries into one combined mesh.
+        """
+        all_vertices = []
+        all_indices = []
+        all_normals = []
+        vertex_offset = 0
+
+        # Merge all component geometries
+        for component in components:
+            geometry = component['geometry']
+
+            print(f"DEBUG: Processing component, geometry keys: {geometry.keys()}")
+            print(f"DEBUG: Vertices type: {type(geometry['vertices'])}, first item: {type(geometry['vertices'][0]) if geometry['vertices'] else None}")
+            print(f"DEBUG: Indices type: {type(geometry['indices'])}, first item: {type(geometry['indices'][0]) if geometry['indices'] else None}")
+
+            # Get vertices
+            vertices = geometry['vertices']
+            if not isinstance(vertices, list):
+                vertices = vertices.tolist() if hasattr(vertices, 'tolist') else list(vertices)
+            # Ensure vertices are floats
+            vertices = [float(v) for v in vertices]
+
+            # Get indices
+            indices = geometry['indices']
+            if not isinstance(indices, list):
+                indices = indices.tolist() if hasattr(indices, 'tolist') else list(indices)
+            # Ensure indices are integers
+            indices = [int(i) for i in indices]
+
+            print(f"DEBUG: After conversion - vertex_offset type: {type(vertex_offset)}, first index: {indices[0] if indices else None}, type: {type(indices[0]) if indices else None}")
+
+            # Get normals
+            normals = geometry.get('normals', [])
+            if normals and not isinstance(normals, list):
+                normals = normals.tolist() if hasattr(normals, 'tolist') else list(normals)
+            # Ensure normals are floats
+            if normals:
+                normals = [float(n) for n in normals]
+
+            # Append vertices and normals
+            all_vertices.extend(vertices)
+            if normals:
+                all_normals.extend(normals)
+
+            # Append indices with offset
+            for idx in indices:
+                all_indices.append(idx + vertex_offset)
+
+            # Update offset (vertices are grouped by 3, so divide by 3)
+            vertex_offset += len(vertices) // 3
+
+        # Create combined geometry data
+        combined_geometry = GeometryData(
+            vertices=all_vertices,
+            indices=all_indices,
+            normals=all_normals if all_normals else None
+        )
+
+        # Create metadata
+        metadata = ModelMetadata(
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            generated_from="compilation",
+            source_prompt=f"Compiled aircraft from {len(components)} components: {', '.join(component_names)}"
+        )
+
+        # Use first component's parameters as base (or create default)
+        base_params = components[0]['parameters'] if components else AeroParameters(
+            wing_type="compiled",
+            span=0,
+            root_chord=0,
+            sweep_angle=0,
+            thickness=0,
+            dihedral=0
+        )
+
+        # Create compiled model
+        compiled_model = Model3D(
+            id=str(uuid.uuid4()),
+            name="Complete Aircraft",
+            parameters=base_params,
+            geometry=combined_geometry,
+            metadata=metadata
+        )
+
+        return compiled_model
 
 
 geometry_service = GeometryService()

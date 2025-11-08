@@ -14,23 +14,51 @@ class AIService:
         """
         system_prompt = """You are an aerospace engineering expert. Extract precise parametric values from user descriptions of aircraft components.
 
-Return a JSON object with these fields:
+IMPORTANT: First determine the component type from the prompt:
+- If prompt mentions "wing" → generate WING parameters
+- If prompt mentions "fuselage" → generate FUSELAGE parameters
+- If prompt mentions "tail" or "stabilizer" → generate TAIL parameters
+- If prompt mentions "engine" → generate ENGINE parameters
+
+For WINGS:
 - wing_type: "delta", "swept", "straight", or "tapered"
-- span: number (meters)
+- span: number (meters, typically 1.5-4m)
 - root_chord: number (meters)
-- tip_chord: number or null (meters, for tapered wings)
+- tip_chord: number or null
 - sweep_angle: number (degrees, 0-90)
-- thickness: number (percentage, 5-20)
-- dihedral: number (degrees, -45 to 45)
-- has_vertical_stabilizer: boolean
-- has_horizontal_stabilizer: boolean
+- thickness: number (10-15)
+- dihedral: number (degrees, -10 to 10)
+- fuselage_length: null
+- fuselage_diameter: null
 
-If values aren't specified, use reasonable defaults based on the wing type.
-For delta wings: typical sweep 45-50°, span 1.5-3m
-For swept wings: typical sweep 25-35°, span 2-4m
-For straight wings: sweep 0°, span 2-3m
+For FUSELAGE:
+- wing_type: "straight"
+- span: 0.8 (use small value)
+- root_chord: use the LENGTH from prompt (e.g., 5m length → root_chord: 5)
+- tip_chord: root_chord (cylindrical) or 70% of root_chord (tapered)
+- sweep_angle: 0
+- thickness: 80-100 (fuselage is thick/cylindrical)
+- dihedral: 0
+- fuselage_length: number from prompt
+- fuselage_diameter: number from prompt
 
-ONLY return valid JSON, no other text."""
+For TAIL ASSEMBLY:
+- wing_type: "swept"
+- span: 1.5-2m
+- sweep_angle: 20-30
+- thickness: 10-12
+- has_vertical_stabilizer: true
+- has_horizontal_stabilizer: true
+
+For ENGINES:
+- wing_type: "straight"
+- span: 0.6
+- root_chord: engine length
+- tip_chord: engine length
+- thickness: 90
+- fuselage_diameter: engine diameter
+
+ONLY return valid JSON matching these exact field names."""
 
         try:
             response = self.client.chat.completions.create(
@@ -48,6 +76,7 @@ ONLY return valid JSON, no other text."""
                 raise ValueError("Empty response from OpenAI")
 
             params_dict = json.loads(content)
+            print(f"AI extracted parameters: {params_dict}")
 
             # Convert to Pydantic model for validation
             return AeroParameters(**params_dict)

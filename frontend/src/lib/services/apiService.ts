@@ -164,6 +164,37 @@ class ApiService {
 
 		return await response.blob();
 	}
+
+	async compileAircraft(aircraft: any): Promise<GenerateResponse> {
+		try {
+			const response = await fetch(`${API_BASE}/generate/compile-aircraft`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ aircraft })
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			const data = await response.json();
+
+			if (data.success && data.model) {
+				return {
+					success: true,
+					model: mapBackendToFrontend(data.model)
+				};
+			}
+
+			return data;
+		} catch (error) {
+			console.error('Error compiling aircraft:', error);
+			return {
+				success: false,
+				error: error instanceof Error ? error.message : 'Unknown error'
+			};
+		}
+	}
 }
 
 export const apiService = new ApiService();
