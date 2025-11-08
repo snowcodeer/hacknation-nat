@@ -1,6 +1,63 @@
-import type { GenerateRequest, GenerateResponse, AeroParameters, ExportFormat } from '$lib/types/model';
+import type { GenerateResponse, AeroParameters, ExportFormat, Model3D } from '$lib/types/model';
 
 const API_BASE = '/api';
+
+// Helper function to convert backend snake_case to frontend camelCase
+function mapBackendToFrontend(backendData: any): Model3D {
+	return {
+		id: backendData.id,
+		name: backendData.name,
+		parameters: {
+			wingType: backendData.parameters.wing_type,
+			span: backendData.parameters.span,
+			rootChord: backendData.parameters.root_chord,
+			tipChord: backendData.parameters.tip_chord,
+			sweepAngle: backendData.parameters.sweep_angle,
+			thickness: backendData.parameters.thickness,
+			dihedral: backendData.parameters.dihedral,
+			fuselageLength: backendData.parameters.fuselage_length,
+			fuselageDiameter: backendData.parameters.fuselage_diameter,
+			hasVerticalStabilizer: backendData.parameters.has_vertical_stabilizer,
+			hasHorizontalStabilizer: backendData.parameters.has_horizontal_stabilizer
+		},
+		geometry: {
+			// Convert arrays to Typed Arrays
+			vertices: backendData.geometry.vertices instanceof Float32Array 
+				? backendData.geometry.vertices 
+				: new Float32Array(backendData.geometry.vertices),
+			indices: backendData.geometry.indices instanceof Uint32Array 
+				? backendData.geometry.indices 
+				: new Uint32Array(backendData.geometry.indices),
+			normals: backendData.geometry.normals 
+				? (backendData.geometry.normals instanceof Float32Array 
+					? backendData.geometry.normals 
+					: new Float32Array(backendData.geometry.normals))
+				: undefined
+		},
+		metadata: {
+			createdAt: new Date(),
+			updatedAt: new Date(),
+			generatedFrom: 'text'
+		}
+	};
+}
+
+// Helper function to convert frontend camelCase to backend snake_case
+function mapFrontendToBackend(parameters: AeroParameters): any {
+	return {
+		wing_type: parameters.wingType,
+		span: parameters.span,
+		root_chord: parameters.rootChord,
+		tip_chord: parameters.tipChord,
+		sweep_angle: parameters.sweepAngle,
+		thickness: parameters.thickness,
+		dihedral: parameters.dihedral,
+		fuselage_length: parameters.fuselageLength,
+		fuselage_diameter: parameters.fuselageDiameter,
+		has_vertical_stabilizer: parameters.hasVerticalStabilizer,
+		has_horizontal_stabilizer: parameters.hasHorizontalStabilizer
+	};
+}
 
 class ApiService {
 	async generateFromText(prompt: string): Promise<GenerateResponse> {
@@ -15,7 +72,16 @@ class ApiService {
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
 
-			return await response.json();
+			const data = await response.json();
+			
+			if (data.success && data.model) {
+				return {
+					success: true,
+					model: mapBackendToFrontend(data.model)
+				};
+			}
+			
+			return data;
 		} catch (error) {
 			console.error('Error generating from text:', error);
 			return {
@@ -27,17 +93,28 @@ class ApiService {
 
 	async updateParameters(parameters: AeroParameters): Promise<GenerateResponse> {
 		try {
+			const backendParams = mapFrontendToBackend(parameters);
+			
 			const response = await fetch(`${API_BASE}/generate/update-parameters`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ parameters })
+				body: JSON.stringify({ parameters: backendParams })
 			});
 
 			if (!response.ok) {
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
 
-			return await response.json();
+			const data = await response.json();
+			
+			if (data.success && data.model) {
+				return {
+					success: true,
+					model: mapBackendToFrontend(data.model)
+				};
+			}
+			
+			return data;
 		} catch (error) {
 			console.error('Error updating parameters:', error);
 			return {
