@@ -1,0 +1,27 @@
+# FastAPI and server
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+pydantic>=2.5.3
+pydantic-settings>=2.1.0
+
+# AI/ML
+openai>=1.10.0
+python-dotenv>=1.0.0
+
+# 3D geometry and CAD
+numpy>=1.26.0
+trimesh>=4.0.0
+scipy>=1.11.0
+networkx>=3.0
+
+# STEP/IGES export (OpenCascade)
+# Note: pythonOCC can be complex to install
+# For MVP, we'll focus on STL export first
+# pythonocc-core==7.7.2
+
+# Image processing
+Pillow>=10.0.0
+aiofiles>=23.2.0
+
+# CORS is built into FastAPI - no additional package needed
