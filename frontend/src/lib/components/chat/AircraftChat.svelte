@@ -5,6 +5,7 @@
 	let chatInput = '';
 	let isGenerating = false;
 	let chatHistory: Array<{ role: 'user' | 'assistant'; message: string; timestamp: string }> = [];
+	let hasStartedChat = false;
 
 	const examples = [
 		'Build me an F-22 Raptor fighter jet',
@@ -26,6 +27,7 @@
 
 		// Add user message to history
 		chatHistory = [...chatHistory, { role: 'user', message: userMessage, timestamp: formatTimestamp() }];
+		hasStartedChat = true;
 		isGenerating = true;
 
 		try {
@@ -114,28 +116,29 @@
 			</div>
 		</div>
 		<h2 class="copilot-title">AI Co-Pilot</h2>
-		<div class="header-divider"></div>
 	</div>
 
-	<!-- Quick Commands -->
-	<div class="quick-commands">
-		<div class="commands-header">
-			<svg viewBox="0 0 16 16" fill="none">
-				<path d="M2 8L8 2L14 8M8 3V14" stroke="currentColor" stroke-width="1.5"/>
-			</svg>
-			<span>QUICK COMMANDS</span>
+	<!-- Quick Commands (hidden after first message) -->
+	{#if !hasStartedChat}
+		<div class="quick-commands">
+			<div class="commands-header">
+				<svg viewBox="0 0 16 16" fill="none">
+					<path d="M2 8L8 2L14 8M8 3V14" stroke="currentColor" stroke-width="1.5"/>
+				</svg>
+				<span>QUICK COMMANDS</span>
+			</div>
+			<div class="commands-grid">
+				{#each examples as example}
+					<button class="command-btn" on:click={() => useExample(example)} disabled={isGenerating}>
+						<svg viewBox="0 0 16 16" fill="none" class="command-icon">
+							<path d="M4 8H12M12 8L9 5M12 8L9 11" stroke="currentColor" stroke-width="1.5"/>
+						</svg>
+						<span>{example}</span>
+					</button>
+				{/each}
+			</div>
 		</div>
-		<div class="commands-grid">
-			{#each examples as example}
-				<button class="command-btn" on:click={() => useExample(example)} disabled={isGenerating}>
-					<svg viewBox="0 0 16 16" fill="none" class="command-icon">
-						<path d="M4 8H12M12 8L9 5M12 8L9 11" stroke="currentColor" stroke-width="1.5"/>
-					</svg>
-					<span>{example}</span>
-				</button>
-			{/each}
-		</div>
-	</div>
+	{/if}
 
 	<!-- Chat Log -->
 	<div class="chat-log">
