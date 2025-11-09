@@ -77,7 +77,7 @@ async def update_parameters(request: UpdateParametersRequest):
 async def generate_from_chat(request: GenerateRequest):
     """
     Generate complete aircraft from natural language chat description.
-    Returns parameters for all 4 components (wings, fuselage, tail, engines).
+    Returns parameters for all 3 components (wings, fuselage, engines).
     """
     try:
         # Use AI to generate parameters for all components
@@ -110,20 +110,20 @@ async def compile_aircraft(request: dict):
         components = []
         component_names = []
 
-        for component_type in ['wings', 'fuselage', 'tail_assembly', 'engines']:
+        for component_type in ['wings', 'fuselage', 'engines']:
             component = aircraft_data.get(component_type)
             if component and component.get('model'):
                 components.append(component['model'])
                 component_names.append(component_type)
 
-        if len(components) < 4:
+        if len(components) < 3:
             return GenerateResponse(
                 success=False,
-                error="All 4 components must be generated before compiling"
+                error="All 3 components must be generated before compiling"
             )
 
-        # Compile the aircraft by merging geometries
-        compiled_model = geometry_service.compile_aircraft_components(components, component_names)
+        # Compile the aircraft by merging geometries with AI-powered assembly
+        compiled_model = await geometry_service.compile_aircraft_components(components, component_names, aircraft_data)
 
         # Store in memory
         global current_model

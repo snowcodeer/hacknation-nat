@@ -1,7 +1,7 @@
 import { writable, derived } from 'svelte/store';
 import type { Model3D } from '$lib/types/model';
 
-export type ComponentType = 'wings' | 'fuselage' | 'tail_assembly' | 'engines';
+export type ComponentType = 'wings' | 'fuselage' | 'engines';
 
 export interface AircraftComponent {
 	type: ComponentType;
@@ -13,14 +13,12 @@ export interface AircraftComponent {
 export interface Aircraft {
 	wings: AircraftComponent;
 	fuselage: AircraftComponent;
-	tail_assembly: AircraftComponent;
 	engines: AircraftComponent;
 }
 
 const initialAircraft: Aircraft = {
 	wings: { type: 'wings', model: null, isGenerating: false, error: null },
 	fuselage: { type: 'fuselage', model: null, isGenerating: false, error: null },
-	tail_assembly: { type: 'tail_assembly', model: null, isGenerating: false, error: null },
 	engines: { type: 'engines', model: null, isGenerating: false, error: null }
 };
 
@@ -40,7 +38,6 @@ export const isCompiling = writable<boolean>(false);
 export const completionStatus = derived(aircraft, ($aircraft) => ({
 	wings: $aircraft.wings.model !== null,
 	fuselage: $aircraft.fuselage.model !== null,
-	tail_assembly: $aircraft.tail_assembly.model !== null,
 	engines: $aircraft.engines.model !== null
 }));
 
@@ -49,7 +46,7 @@ export const isAssemblyReady = derived(completionStatus, ($status) => $status.wi
 
 // Derived: all components complete (ready to compile)
 export const allComponentsComplete = derived(completionStatus, ($status) =>
-	$status.wings && $status.fuselage && $status.tail_assembly && $status.engines
+	$status.wings && $status.fuselage && $status.engines
 );
 
 // Derived: all components for 3D viewer
@@ -57,7 +54,6 @@ export const allComponents = derived(aircraft, ($aircraft) => {
 	const components: Model3D[] = [];
 	if ($aircraft.wings.model) components.push($aircraft.wings.model);
 	if ($aircraft.fuselage.model) components.push($aircraft.fuselage.model);
-	if ($aircraft.tail_assembly.model) components.push($aircraft.tail_assembly.model);
 	if ($aircraft.engines.model) components.push($aircraft.engines.model);
 	return components;
 });

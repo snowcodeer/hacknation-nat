@@ -22,7 +22,6 @@
 	const componentLabels: Record<ComponentType, string> = {
 		wings: 'Wings',
 		fuselage: 'Fuselage',
-		tail_assembly: 'Tail Assembly',
 		engines: 'Engines'
 	};
 
@@ -30,8 +29,7 @@
 	const componentCodes: Record<ComponentType, string> = {
 		wings: 'WNG-01',
 		fuselage: 'FSL-02',
-		tail_assembly: 'TAL-03',
-		engines: 'ENG-04'
+		engines: 'ENG-03'
 	};
 
 	function selectComponent(type: ComponentType) {
@@ -46,7 +44,7 @@
 	$: canAssemble = $isAssemblyReady;
 	$: assemblyComponentCount = $allComponents.length;
 	$: canCompile = $allComponentsComplete && !$compiledAircraft;
-	$: assemblyProgress = (assemblyComponentCount / 4) * 100;
+	$: assemblyProgress = (assemblyComponentCount / 3) * 100;
 
 	async function handleCompileAircraft() {
 		isCompiling.set(true);
@@ -92,7 +90,7 @@
 			<div class="header-status">
 				<div class="status-row">
 					<span class="status-label">ASSEMBLY STATUS</span>
-					<span class="status-value">{assemblyComponentCount}/4 MODULES</span>
+					<span class="status-value">{assemblyComponentCount}/3 MODULES</span>
 				</div>
 				<div class="progress-track">
 					<div class="progress-bar" style="width: {assemblyProgress}%"></div>
@@ -978,7 +976,7 @@
 	/* MODULE SELECTOR */
 	.module-selector {
 		display: grid;
-		grid-template-columns: repeat(4, 1fr);
+		grid-template-columns: repeat(3, 1fr);
 		background: var(--blueprint-surface);
 		border-top: 2px solid var(--border-technical);
 		position: relative;

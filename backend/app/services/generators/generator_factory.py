@@ -7,7 +7,6 @@ from app.services.generators.base_generator import ComponentGenerator
 from app.services.generators.wing_generator import WingGenerator
 from app.services.generators.fuselage_generator import FuselageGenerator
 from app.services.generators.engine_generator import EngineGenerator
-from app.services.generators.tail_generator import TailGenerator
 
 
 class GeneratorFactory:
@@ -24,8 +23,7 @@ class GeneratorFactory:
     _generators = {
         'wing': WingGenerator(),
         'fuselage': FuselageGenerator(),
-        'engine': EngineGenerator(),
-        'tail': TailGenerator()
+        'engine': EngineGenerator()
     }
 
     @classmethod
@@ -34,7 +32,7 @@ class GeneratorFactory:
         Create a generator for the specified component type.
 
         Args:
-            component_type: Type of component ('wing', 'fuselage', 'engine', 'tail')
+            component_type: Type of component ('wing', 'fuselage', 'engine')
 
         Returns:
             ComponentGenerator: Generator instance for the component type

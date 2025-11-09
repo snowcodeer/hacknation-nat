@@ -17,7 +17,6 @@
 	const componentColors: Record<string, number> = {
 		wings: 0x3b82f6,          // Blue
 		fuselage: 0x10b981,       // Green
-		tail_assembly: 0xf59e0b,  // Orange
 		engines: 0x8b5cf6         // Purple
 	};
 
@@ -231,29 +230,6 @@
 				modelMeshes.add(leftWireframeMesh);
 			}
 
-			// Tail assembly - at rear of fuselage
-			if (aircraftData.tail_assembly.model) {
-				const { mesh, geometry } = createMeshFromModel(
-					aircraftData.tail_assembly.model,
-					'tail_assembly',
-					new THREE.Vector3(-2.5, 0.5, 0)  // Behind fuselage (negative X)
-				);
-				// Rotate tail to align with fuselage, keep at normal size
-				mesh.rotation.y = Math.PI / 2;  // 90 degrees to align with fuselage
-				modelMeshes.add(mesh);
-
-				// Add wireframe
-				const wireframeMaterial = new THREE.MeshBasicMaterial({
-					color: componentColors.tail_assembly,
-					wireframe: true,
-					transparent: true,
-					opacity: 0.2
-				});
-				const wireframe = new THREE.Mesh(geometry.clone(), wireframeMaterial);
-				wireframe.rotation.copy(mesh.rotation);
-				wireframe.position.copy(mesh.position);
-				modelMeshes.add(wireframe);
-			}
 
 			// Engines - duplicate for left and right, positioned under wings on either side
 			if (aircraftData.engines.model) {

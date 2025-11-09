@@ -56,24 +56,6 @@
 			positionY: 0.5,
 			positionZ: 0
 		},
-		tail_assembly: {
-			wingType: 'swept',
-			span: 5,
-			rootChord: 2,
-			tipChord: 1,
-			sweepAngle: 25,
-			thickness: 11,
-			dihedral: 0,
-			fuselageLength: null,
-			fuselageDiameter: null,
-			engineLength: null,
-			engineDiameter: null,
-			hasVerticalStabilizer: true,
-			hasHorizontalStabilizer: true,
-			positionX: -2.5,
-			positionY: 0.5,
-			positionZ: 0
-		},
 		engines: {
 			wingType: 'straight',
 			span: 0.6,
@@ -188,7 +170,7 @@
 			<span>PARAMETER CONTROLS</span>
 		</div>
 
-		{#if componentType === 'wings' || componentType === 'tail_assembly'}
+		{#if componentType === 'wings'}
 			<!-- Wing Configuration -->
 			<div class="control-group">
 				<div class="group-label">WING CONFIGURATION</div>
@@ -369,41 +351,6 @@
 				</div>
 			</div>
 
-			{#if componentType === 'tail_assembly'}
-				<div class="control-group">
-					<div class="group-label">STABILIZER CONFIG</div>
-
-					<label class="checkbox-control">
-						<input
-							type="checkbox"
-							bind:checked={parameters.hasVerticalStabilizer}
-							on:change={handleUpdateParameters}
-							disabled={isGenerating}
-						/>
-						<span class="checkbox-label">
-							<svg viewBox="0 0 16 16" fill="none" class="check-icon">
-								<path d="M4 8L7 11L12 5" stroke="currentColor" stroke-width="2"/>
-							</svg>
-							VERTICAL STABILIZER
-						</span>
-					</label>
-
-					<label class="checkbox-control">
-						<input
-							type="checkbox"
-							bind:checked={parameters.hasHorizontalStabilizer}
-							on:change={handleUpdateParameters}
-							disabled={isGenerating}
-						/>
-						<span class="checkbox-label">
-							<svg viewBox="0 0 16 16" fill="none" class="check-icon">
-								<path d="M4 8L7 11L12 5" stroke="currentColor" stroke-width="2"/>
-							</svg>
-							HORIZONTAL STABILIZER
-						</span>
-					</label>
-				</div>
-			{/if}
 		{/if}
 
 		{#if componentType === 'fuselage'}

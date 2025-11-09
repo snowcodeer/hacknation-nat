@@ -4,6 +4,7 @@ Single Responsibility: Generates only engine nacelle geometry.
 """
 import numpy as np
 import trimesh
+import sys
 from app.models import AeroParameters
 from app.services.generators.base_generator import ComponentGenerator
 
@@ -76,6 +77,9 @@ class EngineGenerator(ComponentGenerator):
 
         mesh = trimesh.Trimesh(vertices=vertices_array, faces=faces_array)
         mesh.fix_normals()
+
+        print(f"[ENGINE GENERATOR] Created single engine with {len(vertices_array)} vertices, {len(faces_array)} faces", file=sys.stderr, flush=True)
+        print(f"[ENGINE GENERATOR] X range: {vertices_array[:, 0].min()} to {vertices_array[:, 0].max()}", file=sys.stderr, flush=True)
 
         return mesh
 

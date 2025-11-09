@@ -12,6 +12,8 @@ import sys
 
 # Import generator factory for component generation
 from app.services.generators import GeneratorFactory
+# Import AI service for intelligent assembly
+from app.services import ai_service
 
 
 class GeometryService:
@@ -98,7 +100,7 @@ class GeometryService:
 
     def _determine_component_type(self, params: AeroParameters, source_prompt: str = None) -> str:
         """
-        Determine the component type (wing, fuselage, tail, engine) based on parameters and prompt.
+        Determine the component type (wing, fuselage, engine) based on parameters and prompt.
         Uses modular parameter approach - engines have engine_* fields, fuselages have fuselage_* fields.
 
         Args:
@@ -106,23 +108,17 @@ class GeometryService:
             source_prompt: Original text prompt (optional)
 
         Returns:
-            str: Component type identifier ("wing", "fuselage", "tail", "engine")
+            str: Component type identifier ("wing", "fuselage", "engine")
         """
         prompt_lower = (source_prompt or "").lower()
 
         # Check prompt for explicit component type keywords (highest priority)
         if "fuselage" in prompt_lower or "body" in prompt_lower:
             return "fuselage"
-        elif "tail" in prompt_lower or "stabilizer" in prompt_lower:
-            return "tail"
         elif "engine" in prompt_lower or "nacelle" in prompt_lower or "turbine" in prompt_lower:
             return "engine"
         elif "wing" in prompt_lower or "wings" in prompt_lower:
             return "wing"
-
-        # Check for tail indicators
-        if params.has_vertical_stabilizer or params.has_horizontal_stabilizer:
-            return "tail"
 
         # MODULAR APPROACH: Check for ENGINE parameters (engine_length, engine_diameter)
         if params.engine_length and params.engine_diameter:
@@ -157,21 +153,20 @@ class GeometryService:
         if component_type == "fuselage":
             fuselage_type = (params.fuselage_type or "commercial").capitalize()
             return f"{fuselage_type} Fuselage"
-        elif component_type == "tail":
-            return "Tail Assembly"
         elif component_type == "engine":
             return "Engine Nacelle"
         else:  # wing
             return f"{params.wing_type.capitalize()} Wing"
 
-    def compile_aircraft_components(self, components: list, component_names: list) -> Model3D:
+    async def compile_aircraft_components(self, components: list, component_names: list, aircraft_data: dict = None) -> Model3D:
         """
         Compile multiple aircraft components into a single unified model.
-        Positions components correctly in 3D space to form a realistic aircraft.
+        Uses AI to calculate optimal positioning with interference checking.
 
         Args:
             components: List of component models or dicts
             component_names: List of component type names
+            aircraft_data: Full aircraft data dict for AI analysis
 
         Returns:
             Model3D: Compiled aircraft model
@@ -179,10 +174,10 @@ class GeometryService:
         # Create trimesh objects from components with proper positioning
         meshes = []
 
-        # Extract component meshes
+        # Extract component meshes AND their parameters for accurate positioning
         wings_mesh = None
+        wings_params = None
         fuselage_mesh = None
-        tail_mesh = None
         engines_mesh = None
 
         for i, component in enumerate(components):
@@ -226,16 +221,31 @@ class GeometryService:
             # Create mesh
             mesh = trimesh.Trimesh(vertices=vertices, faces=indices)
 
+            # Extract parameters for this component
+            if isinstance(component, dict):
+                component_params = component.get('parameters')
+            else:
+                component_params = component.parameters if hasattr(component, 'parameters') else None
+
             # Assign to appropriate component based on name
             component_type = component_names[i].lower()
             if 'wing' in component_type:
                 wings_mesh = mesh
+                wings_params = component_params  # Store wing parameters for engine positioning
             elif 'fuselage' in component_type:
                 fuselage_mesh = mesh
-            elif 'tail' in component_type:
-                tail_mesh = mesh
             elif 'engine' in component_type:
                 engines_mesh = mesh
+
+        # USE AI TO CALCULATE INTELLIGENT POSITIONING
+        print(f"[AI ASSEMBLY] Calculating intelligent assembly positioning...", file=sys.stderr, flush=True)
+
+        assembly_data = await ai_service.calculate_intelligent_assembly(aircraft_data or {})
+
+        print(f"[AI ASSEMBLY] Wing attachment: {assembly_data['wing_attachment']}", file=sys.stderr, flush=True)
+        print(f"[AI ASSEMBLY] Engine attachment: {assembly_data['engine_attachment']}", file=sys.stderr, flush=True)
+        print(f"[AI ASSEMBLY] Interference check: {assembly_data['interference_check']}", file=sys.stderr, flush=True)
+        print(f"[AI ASSEMBLY] Center of gravity: {assembly_data['center_of_gravity']}", file=sys.stderr, flush=True)
 
         # Position components to form a realistic aircraft
         positioned_meshes = []
@@ -248,12 +258,14 @@ class GeometryService:
         else:
             fuselage_length = 4.0  # Default length if no fuselage
 
-        # 2. Wings - attach at 1/3 from nose (forward part of fuselage)
+        # 2. Wings - attach using AI-calculated position
         # Create left and right wings
         if wings_mesh:
-            wing_offset_x = -fuselage_length * 0.15  # Slightly forward of center
-            wing_offset_y = 0  # Distance from centerline (will be positive for right, negative for left)
-            wing_offset_z = 0  # At fuselage centerline
+            wing_offset_x = assembly_data['wing_attachment']['position_x']
+            wing_offset_y = assembly_data['wing_attachment']['position_y']
+            wing_offset_z = assembly_data['wing_attachment']['position_z']
+
+            print(f"[AI ASSEMBLY] Positioning wings at X={wing_offset_x}, Y={wing_offset_y}, Z={wing_offset_z}", file=sys.stderr, flush=True)
 
             # Assuming wings_mesh is a single wing, duplicate it for left and right
             # Right wing (positive Y)
@@ -271,31 +283,14 @@ class GeometryService:
             wing_left.apply_transform(translation_left)
             positioned_meshes.append(wing_left)
 
-        # 3. Tail Assembly - attach at rear of fuselage
-        if tail_mesh:
-            tail_offset_x = fuselage_length * 0.4  # At rear
-            tail_offset_z = 0  # Align with fuselage top
-            translation = trimesh.transformations.translation_matrix([tail_offset_x, 0, tail_offset_z])
-            tail_positioned = tail_mesh.copy()
-            tail_positioned.apply_transform(translation)
-            positioned_meshes.append(tail_positioned)
-
-        # 4. Engines - attach under wings or on fuselage sides
+        # 3. Engines - attach using AI-calculated position
         if engines_mesh:
-            # Create two engines (left and right)
-            # Position engines under the wings, not at the tips
-            engine_offset_x = -fuselage_length * 0.15  # Slightly forward (closer to wing position)
+            # Use AI-calculated positioning
+            engine_offset_x = assembly_data['engine_attachment']['position_x']
+            engine_offset_y = assembly_data['engine_attachment']['position_y']
+            engine_offset_z = assembly_data['engine_attachment']['position_z']
 
-            # Calculate engine position based on wing span if available
-            # Typical placement is 30-40% of semi-span from centerline
-            if wings_mesh:
-                wing_bounds = wings_mesh.bounds
-                wing_semi_span = (wing_bounds[1][1] - wing_bounds[0][1]) / 2  # Half the Y extent
-                engine_offset_y = wing_semi_span * 0.35  # 35% of semi-span from centerline
-            else:
-                engine_offset_y = 5.0  # Default fallback if no wings
-
-            engine_offset_z = -0.5  # Below wing/fuselage
+            print(f"[AI ASSEMBLY] Positioning engines at X={engine_offset_x}, Y={engine_offset_y}, Z={engine_offset_z}", file=sys.stderr, flush=True)
 
             # Rotate engine 90 degrees around Y-axis to make it horizontal (pointing forward)
             rotation_matrix = trimesh.transformations.rotation_matrix(

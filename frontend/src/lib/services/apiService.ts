@@ -4,27 +4,28 @@ const API_BASE = '/api';
 
 // Helper function to convert backend snake_case to frontend camelCase
 function mapBackendToFrontend(backendData: any): Model3D {
+	const params = backendData.parameters || {};
 	return {
 		id: backendData.id,
 		name: backendData.name,
 		parameters: {
-			wingType: backendData.parameters.wing_type,
-			span: backendData.parameters.span,
-			rootChord: backendData.parameters.root_chord,
-			tipChord: backendData.parameters.tip_chord,
-			sweepAngle: backendData.parameters.sweep_angle,
-			thickness: backendData.parameters.thickness,
-			dihedral: backendData.parameters.dihedral,
-			fuselageType: backendData.parameters.fuselage_type,
-			fuselageLength: backendData.parameters.fuselage_length,
-			fuselageDiameter: backendData.parameters.fuselage_diameter,
-			engineLength: backendData.parameters.engine_length,
-			engineDiameter: backendData.parameters.engine_diameter,
-			hasVerticalStabilizer: backendData.parameters.has_vertical_stabilizer,
-			hasHorizontalStabilizer: backendData.parameters.has_horizontal_stabilizer,
-			positionX: backendData.parameters.position_x,
-			positionY: backendData.parameters.position_y,
-			positionZ: backendData.parameters.position_z
+			wingType: params.wing_type ?? 'straight',
+			span: params.span ?? 1.0,
+			rootChord: params.root_chord ?? 1.0,
+			tipChord: params.tip_chord ?? params.root_chord ?? 1.0,
+			sweepAngle: params.sweep_angle ?? 0,
+			thickness: params.thickness ?? 12,
+			dihedral: params.dihedral ?? 0,
+			fuselageType: params.fuselage_type,
+			fuselageLength: params.fuselage_length,
+			fuselageDiameter: params.fuselage_diameter,
+			engineLength: params.engine_length,
+			engineDiameter: params.engine_diameter,
+			hasVerticalStabilizer: params.has_vertical_stabilizer ?? false,
+			hasHorizontalStabilizer: params.has_horizontal_stabilizer ?? false,
+			positionX: params.position_x ?? 0,
+			positionY: params.position_y ?? 0,
+			positionZ: params.position_z ?? 0
 		},
 		geometry: {
 			// Convert arrays to Typed Arrays
