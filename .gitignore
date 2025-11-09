@@ -50,3 +50,7 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# Test files
+backend/test_*.py
+nul
