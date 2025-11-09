@@ -14,13 +14,6 @@
 		'Make a C-130 cargo aircraft'
 	];
 
-	const editExamples = [
-		'Set wing span to 80 meters',
-		'Make the fuselage bigger',
-		'Increase wing sweep to 45 degrees',
-		'Change engine diameter to 3 meters'
-	];
-
 	function formatTimestamp(): string {
 		const now = new Date();
 		return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
@@ -212,16 +205,15 @@
 	<div class="chat-log">
 		<!-- Quick Commands (shown before first message) -->
 		{#if !hasStartedChat}
-			{@const hasComponents = $aircraft.wings.model || $aircraft.fuselage.model || $aircraft.engines.model}
 			<div class="quick-commands">
 				<div class="commands-header">
 					<svg viewBox="0 0 16 16" fill="none">
 						<path d="M2 8L8 2L14 8M8 3V14" stroke="currentColor" stroke-width="1.5"/>
 					</svg>
-					<span>{hasComponents ? 'EDIT COMMANDS' : 'QUICK COMMANDS'}</span>
+					<span>QUICK COMMANDS</span>
 				</div>
 				<div class="commands-grid">
-					{#each (hasComponents ? editExamples : examples) as example}
+					{#each examples as example}
 						<button class="command-btn" on:click={() => useExample(example)} disabled={isGenerating}>
 							<svg viewBox="0 0 16 16" fill="none" class="command-icon">
 								<path d="M4 8H12M12 8L9 5M12 8L9 11" stroke="currentColor" stroke-width="1.5"/>

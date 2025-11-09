@@ -233,7 +233,67 @@ async def edit_component(request: dict):
                 "parameters": updated_params
             }
 
-        elif operation in ["scale", "rotate", "translate"]:
+        elif operation == "scale":
+            # Scale the component by modifying its dimensional parameters
+            scale_factor = parameters.get('scale_factor', 1.0)
+
+            # Get current parameters
+            current_params = component.get('parameters', {})
+            from app.models import AeroParameters
+            params_dict = dict(current_params)
+
+            # Scale the appropriate dimensional parameters based on component type
+            if component_type == "wings":
+                # Scale wing dimensions
+                if 'span' in params_dict:
+                    params_dict['span'] = params_dict['span'] * scale_factor
+                if 'root_chord' in params_dict:
+                    params_dict['root_chord'] = params_dict['root_chord'] * scale_factor
+                if 'tip_chord' in params_dict:
+                    params_dict['tip_chord'] = params_dict['tip_chord'] * scale_factor
+
+            elif component_type == "fuselage":
+                # Scale fuselage dimensions
+                if 'fuselage_length' in params_dict and params_dict['fuselage_length']:
+                    params_dict['fuselage_length'] = params_dict['fuselage_length'] * scale_factor
+                if 'fuselage_diameter' in params_dict and params_dict['fuselage_diameter']:
+                    params_dict['fuselage_diameter'] = params_dict['fuselage_diameter'] * scale_factor
+                # Also scale the root/tip chord to match fuselage length
+                if 'root_chord' in params_dict:
+                    params_dict['root_chord'] = params_dict['root_chord'] * scale_factor
+                if 'tip_chord' in params_dict:
+                    params_dict['tip_chord'] = params_dict['tip_chord'] * scale_factor
+
+            elif component_type == "engines":
+                # Scale engine dimensions
+                if 'engine_length' in params_dict and params_dict['engine_length']:
+                    params_dict['engine_length'] = params_dict['engine_length'] * scale_factor
+                if 'engine_diameter' in params_dict and params_dict['engine_diameter']:
+                    params_dict['engine_diameter'] = params_dict['engine_diameter'] * scale_factor
+                # Also scale the root/tip chord to match engine length
+                if 'root_chord' in params_dict:
+                    params_dict['root_chord'] = params_dict['root_chord'] * scale_factor
+                if 'tip_chord' in params_dict:
+                    params_dict['tip_chord'] = params_dict['tip_chord'] * scale_factor
+
+            # Regenerate the model with scaled parameters
+            updated_params = AeroParameters(**params_dict)
+            updated_model = geometry_service.create_model_from_parameters(
+                params=updated_params,
+                source_prompt=f"Scaled via chat: {prompt}",
+                generated_from="edit"
+            )
+
+            return {
+                "success": True,
+                "component": component_type,
+                "operation": operation,
+                "description": description,
+                "model": updated_model,
+                "parameters": updated_params
+            }
+
+        elif operation in ["rotate", "translate"]:
             # For geometric transformations, we need to modify the geometry
             # This is more complex as we need to transform the vertices
             return {
