@@ -108,14 +108,13 @@
 <div class="copilot-container">
 	<!-- Header -->
 	<div class="copilot-header">
-		<div class="header-top">
-			<span class="copilot-code">AI-COPILOT</span>
+		<div class="header-row">
+			<h2 class="copilot-title">AI Co-Pilot</h2>
 			<div class="status-indicator active">
 				<div class="indicator-pulse"></div>
 				<span>ONLINE</span>
 			</div>
 		</div>
-		<h2 class="copilot-title">AI Co-Pilot</h2>
 	</div>
 
 	<!-- Quick Commands (hidden after first message) -->
@@ -243,35 +242,32 @@
 
 	/* HEADER */
 	.copilot-header {
-		padding: var(--space-5);
+		padding: var(--space-3) var(--space-4);
 		border-bottom: 1px solid var(--border-technical);
 		background: var(--blueprint-surface);
 		flex-shrink: 0;
 	}
 
-	.header-top {
+	.header-row {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		margin-bottom: var(--space-3);
 	}
 
-	.copilot-code {
-		font-family: var(--font-technical);
-		font-size: 0.625rem;
+	.copilot-title {
+		font-size: 0.875rem;
 		font-weight: 700;
-		letter-spacing: 0.15em;
-		color: var(--cyan-400);
-		padding: var(--space-1) var(--space-3);
-		background: var(--blueprint-bg);
-		border: 1px solid var(--border-technical);
+		color: var(--gray-100);
+		margin: 0;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
 	}
 
 	.status-indicator {
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
-		font-size: 0.625rem;
+		font-size: 0.5625rem;
 		font-weight: 700;
 		letter-spacing: 0.1em;
 		color: var(--gray-400);
@@ -282,11 +278,11 @@
 	}
 
 	.indicator-pulse {
-		width: 8px;
-		height: 8px;
+		width: 6px;
+		height: 6px;
 		border-radius: 50%;
 		background: var(--green-success);
-		box-shadow: 0 0 10px var(--green-glow);
+		box-shadow: 0 0 8px var(--green-glow);
 		animation: pulse-bright 2s infinite;
 	}
 
@@ -299,29 +295,6 @@
 			opacity: 0.7;
 			transform: scale(0.85);
 		}
-	}
-
-	.copilot-title {
-		font-size: 1.25rem;
-		font-weight: 700;
-		color: var(--gray-100);
-		margin: 0;
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-	}
-
-	.header-divider {
-		height: 1px;
-		background: linear-gradient(90deg, var(--cyan-600), transparent);
-		margin: var(--space-4) 0;
-	}
-
-	.copilot-desc {
-		font-size: 0.6875rem;
-		font-weight: 600;
-		letter-spacing: 0.1em;
-		color: var(--gray-400);
-		margin: 0;
 	}
 
 	/* QUICK COMMANDS */
