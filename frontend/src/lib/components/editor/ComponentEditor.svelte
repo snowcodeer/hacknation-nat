@@ -17,16 +17,16 @@
 	let previousComponentType: CT = componentType;
 	let showSliders = false;
 
-	// Parameter defaults by component type - realistic dimensions
+	// Parameter defaults by component type - REAL-LIFE SCALE dimensions
 	const defaultParams: Record<CT, AeroParameters> = {
 		wings: {
-			wingType: 'delta',
-			span: 10,
-			rootChord: 4,
-			tipChord: 1.5,
+			wingType: 'swept',
+			span: 60,
+			rootChord: 14,
+			tipChord: 3,
 			sweepAngle: 30,
 			thickness: 12,
-			dihedral: 0,
+			dihedral: 5,
 			fuselageLength: null,
 			fuselageDiameter: null,
 			engineLength: null,
@@ -40,14 +40,14 @@
 		fuselage: {
 			wingType: 'straight',
 			span: 0.8,
-			rootChord: 5,
-			tipChord: 3.5,
+			rootChord: 60,
+			tipChord: 42,
 			sweepAngle: 0,
 			thickness: 90,
 			dihedral: 0,
 			fuselageType: 'commercial',
-			fuselageLength: 5,
-			fuselageDiameter: 0.7,
+			fuselageLength: 60,
+			fuselageDiameter: 6,
 			engineLength: null,
 			engineDiameter: null,
 			hasVerticalStabilizer: false,
@@ -59,7 +59,7 @@
 		engines: {
 			wingType: 'straight',
 			span: 0.6,
-			rootChord: 2,
+			rootChord: 5,
 			tipChord: 2,
 			sweepAngle: 0,
 			thickness: 90,
@@ -199,18 +199,18 @@
 					<div class="param-slider-container">
 						<input
 							type="range"
-							min="5"
-							max="15"
-							step="0.1"
+							min="10"
+							max="90"
+							step="0.5"
 							bind:value={parameters.span}
 							on:change={handleUpdateParameters}
 							disabled={isGenerating}
 							class="param-slider"
 						/>
 						<div class="slider-marks">
-							<span class="mark">5.0</span>
-							<span class="mark">10.0</span>
-							<span class="mark">15.0</span>
+							<span class="mark">10m</span>
+							<span class="mark">50m</span>
+							<span class="mark">90m</span>
 						</div>
 					</div>
 				</div>
@@ -226,18 +226,18 @@
 					<div class="param-slider-container">
 						<input
 							type="range"
-							min="1"
-							max="5"
-							step="0.1"
+							min="3"
+							max="20"
+							step="0.5"
 							bind:value={parameters.rootChord}
 							on:change={handleUpdateParameters}
 							disabled={isGenerating}
 							class="param-slider"
 						/>
 						<div class="slider-marks">
-							<span class="mark">1.0</span>
-							<span class="mark">3.0</span>
-							<span class="mark">5.0</span>
+							<span class="mark">3m</span>
+							<span class="mark">11m</span>
+							<span class="mark">20m</span>
 						</div>
 					</div>
 				</div>
@@ -253,18 +253,18 @@
 					<div class="param-slider-container">
 						<input
 							type="range"
-							min="0.1"
-							max="3"
-							step="0.1"
+							min="1"
+							max="6"
+							step="0.2"
 							bind:value={parameters.tipChord}
 							on:change={handleUpdateParameters}
 							disabled={isGenerating}
 							class="param-slider"
 						/>
 						<div class="slider-marks">
-							<span class="mark">0.1</span>
-							<span class="mark">1.5</span>
-							<span class="mark">3.0</span>
+							<span class="mark">1m</span>
+							<span class="mark">3.5m</span>
+							<span class="mark">6m</span>
 						</div>
 					</div>
 				</div>
@@ -386,18 +386,18 @@
 					<div class="param-slider-container">
 						<input
 							type="range"
-							min="4"
-							max="20"
-							step="0.5"
+							min="12"
+							max="85"
+							step="1"
 							bind:value={parameters.fuselageLength}
 							on:change={handleUpdateParameters}
 							disabled={isGenerating}
 							class="param-slider"
 						/>
 						<div class="slider-marks">
-							<span class="mark">4.0</span>
-							<span class="mark">12.0</span>
-							<span class="mark">20.0</span>
+							<span class="mark">12m</span>
+							<span class="mark">48m</span>
+							<span class="mark">85m</span>
 						</div>
 					</div>
 				</div>
@@ -413,18 +413,18 @@
 					<div class="param-slider-container">
 						<input
 							type="range"
-							min="0.5"
-							max="3"
-							step="0.1"
+							min="1.5"
+							max="8"
+							step="0.2"
 							bind:value={parameters.fuselageDiameter}
 							on:change={handleUpdateParameters}
 							disabled={isGenerating}
 							class="param-slider"
 						/>
 						<div class="slider-marks">
-							<span class="mark">0.5</span>
-							<span class="mark">1.75</span>
-							<span class="mark">3.0</span>
+							<span class="mark">1.5m</span>
+							<span class="mark">4.75m</span>
+							<span class="mark">8m</span>
 						</div>
 					</div>
 				</div>
@@ -473,18 +473,18 @@
 					<div class="param-slider-container">
 						<input
 							type="range"
-							min="1.5"
-							max="3"
-							step="0.1"
+							min="2"
+							max="6"
+							step="0.2"
 							bind:value={parameters.engineLength}
 							on:change={handleUpdateParameters}
 							disabled={isGenerating}
 							class="param-slider"
 						/>
 						<div class="slider-marks">
-							<span class="mark">1.5</span>
-							<span class="mark">2.25</span>
-							<span class="mark">3.0</span>
+							<span class="mark">2m</span>
+							<span class="mark">4m</span>
+							<span class="mark">6m</span>
 						</div>
 					</div>
 				</div>
@@ -500,18 +500,18 @@
 					<div class="param-slider-container">
 						<input
 							type="range"
-							min="0.3"
-							max="0.8"
-							step="0.05"
+							min="0.5"
+							max="3.5"
+							step="0.1"
 							bind:value={parameters.engineDiameter}
 							on:change={handleUpdateParameters}
 							disabled={isGenerating}
 							class="param-slider"
 						/>
 						<div class="slider-marks">
-							<span class="mark">0.30</span>
-							<span class="mark">0.55</span>
-							<span class="mark">0.80</span>
+							<span class="mark">0.5m</span>
+							<span class="mark">2m</span>
+							<span class="mark">3.5m</span>
 						</div>
 					</div>
 				</div>
