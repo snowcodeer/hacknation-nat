@@ -117,40 +117,32 @@
 		</div>
 	</div>
 
-	<!-- Quick Commands (hidden after first message) -->
-	{#if !hasStartedChat}
-		<div class="quick-commands">
-			<div class="commands-header">
-				<svg viewBox="0 0 16 16" fill="none">
-					<path d="M2 8L8 2L14 8M8 3V14" stroke="currentColor" stroke-width="1.5"/>
-				</svg>
-				<span>QUICK COMMANDS</span>
-			</div>
-			<div class="commands-grid">
-				{#each examples as example}
-					<button class="command-btn" on:click={() => useExample(example)} disabled={isGenerating}>
-						<svg viewBox="0 0 16 16" fill="none" class="command-icon">
-							<path d="M4 8H12M12 8L9 5M12 8L9 11" stroke="currentColor" stroke-width="1.5"/>
-						</svg>
-						<span>{example}</span>
-					</button>
-				{/each}
-			</div>
-		</div>
-	{/if}
-
 	<!-- Chat Log -->
 	<div class="chat-log">
-		{#if chatHistory.length === 0}
-			<div class="empty-state">
-				<svg viewBox="0 0 64 64" fill="none">
-					<circle cx="32" cy="32" r="30" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4"/>
-					<path d="M32 20V32L40 36" stroke="currentColor" stroke-width="2"/>
-				</svg>
-				<p class="empty-title">No communications</p>
-				<p class="empty-subtitle">Use quick commands or type a request</p>
+		<!-- Quick Commands (shown before first message) -->
+		{#if !hasStartedChat}
+			<div class="quick-commands">
+				<div class="commands-header">
+					<svg viewBox="0 0 16 16" fill="none">
+						<path d="M2 8L8 2L14 8M8 3V14" stroke="currentColor" stroke-width="1.5"/>
+					</svg>
+					<span>QUICK COMMANDS</span>
+				</div>
+				<div class="commands-grid">
+					{#each examples as example}
+						<button class="command-btn" on:click={() => useExample(example)} disabled={isGenerating}>
+							<svg viewBox="0 0 16 16" fill="none" class="command-icon">
+								<path d="M4 8H12M12 8L9 5M12 8L9 11" stroke="currentColor" stroke-width="1.5"/>
+							</svg>
+							<span>{example}</span>
+						</button>
+					{/each}
+				</div>
 			</div>
-		{:else}
+		{/if}
+
+		<!-- Messages -->
+		{#if chatHistory.length > 0}
 			{#each chatHistory as message}
 				<div class="message {message.role}">
 					<div class="message-header">
@@ -300,8 +292,6 @@
 	/* QUICK COMMANDS */
 	.quick-commands {
 		padding: var(--space-4);
-		border-bottom: 1px solid var(--border-subtle);
-		flex-shrink: 0;
 	}
 
 	.commands-header {
@@ -364,41 +354,25 @@
 	.chat-log {
 		flex: 1;
 		overflow-y: auto;
-		padding: var(--space-4);
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-4);
+		min-height: 0;
 	}
 
-	.empty-state {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: var(--space-3);
-		color: var(--gray-500);
-		padding: var(--space-8);
+	.chat-log > .quick-commands:first-child,
+	.chat-log > .message:first-child {
+		margin-top: var(--space-4);
 	}
 
-	.empty-state svg {
-		width: 64px;
-		height: 64px;
-		opacity: 0.3;
+	.chat-log > .message:last-child,
+	.chat-log > .message.generating:last-child {
+		margin-bottom: var(--space-4);
 	}
 
-	.empty-title {
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--gray-400);
-		margin: 0;
-	}
-
-	.empty-subtitle {
-		font-size: 0.6875rem;
-		color: var(--gray-500);
-		margin: 0;
-		text-align: center;
+	.chat-log > .message {
+		margin-left: var(--space-4);
+		margin-right: var(--space-4);
 	}
 
 	/* MESSAGES */
