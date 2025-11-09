@@ -120,4 +120,71 @@ ONLY return valid JSON matching these exact field names."""
             )
 
 
+    async def generate_complete_aircraft(self, prompt: str) -> dict:
+        """
+        Use GPT-4 to generate parameters for all 4 components (wings, fuselage, tail, engines)
+        from a single natural language description.
+        Returns a dict with keys: wings, fuselage, tail_assembly, engines
+        """
+        system_prompt = """You are an aerospace engineering expert. Generate complete aircraft parameters from natural language descriptions.
+
+The user will describe an aircraft (e.g., "F-22 fighter jet", "Boeing 747", "small private plane").
+You must return parameters for ALL 4 components: wings, fuselage, tail_assembly, and engines.
+
+For each component, use the appropriate parameter structure:
+
+WINGS:
+- wing_type, span, root_chord, tip_chord, sweep_angle, thickness, dihedral
+- has_vertical_stabilizer: false, has_horizontal_stabilizer: false
+- All fuselage/engine fields: null
+
+FUSELAGE:
+- wing_type: "straight", span: 0.8, thickness: 80-100
+- fuselage_type: "commercial"/"fighter"/"cargo"/"private"
+- fuselage_length, fuselage_diameter
+- All engine fields: null
+
+TAIL_ASSEMBLY:
+- wing_type: "swept", span, root_chord, tip_chord, sweep_angle, thickness
+- has_vertical_stabilizer: true, has_horizontal_stabilizer: true
+- All fuselage/engine fields: null
+
+ENGINES:
+- wing_type: "straight", span: 0.6, thickness: 90
+- engine_length, engine_diameter
+- All fuselage fields: null
+
+Return as JSON with this structure:
+{
+  "wings": { parameters... },
+  "fuselage": { parameters... },
+  "tail_assembly": { parameters... },
+  "engines": { parameters... }
+}"""
+
+        try:
+            response = self.client.chat.completions.create(
+                model=settings.openai_model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,
+                response_format={"type": "json_object"}
+            )
+
+            content = response.choices[0].message.content
+            if not content:
+                raise ValueError("Empty response from OpenAI")
+
+            aircraft_dict = json.loads(content)
+            print(f"AI generated complete aircraft: {aircraft_dict}")
+
+            return aircraft_dict
+
+        except Exception as e:
+            print(f"Error generating complete aircraft: {e}")
+            raise
+
+
 ai_service = AIService()

@@ -2,6 +2,7 @@
 	import Viewer3D from '$lib/components/3d/Viewer3D.svelte';
 	import ComponentEditor from '$lib/components/editor/ComponentEditor.svelte';
 	import ExportPanel from '$lib/components/ui/ExportPanel.svelte';
+	import AircraftChat from '$lib/components/chat/AircraftChat.svelte';
 	import {
 		aircraft,
 		activeComponent,
@@ -91,10 +92,12 @@
 	<div class="workspace">
 		<!-- Left: Editor -->
 		<section class="editor-area">
+			<!-- Chat Interface -->
+			<AircraftChat />
+
 			{#if viewMode === 'edit'}
 				<div class="editor-header">
 					<h2>{componentIcons[$activeComponent]} {componentLabels[$activeComponent]}</h2>
-					<p>Design this component using AI text prompts</p>
 				</div>
 				<div class="editor-content">
 					<ComponentEditor componentType={$activeComponent} />

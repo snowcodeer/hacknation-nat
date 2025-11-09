@@ -73,6 +73,31 @@ async def update_parameters(request: UpdateParametersRequest):
         )
 
 
+@router.post("/from-chat")
+async def generate_from_chat(request: GenerateRequest):
+    """
+    Generate complete aircraft from natural language chat description.
+    Returns parameters for all 4 components (wings, fuselage, tail, engines).
+    """
+    try:
+        # Use AI to generate parameters for all components
+        aircraft_params = await ai_service.generate_complete_aircraft(request.prompt)
+
+        return {
+            "success": True,
+            "aircraft_params": aircraft_params
+        }
+
+    except Exception as e:
+        print(f"Error generating from chat: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+
 @router.post("/compile-aircraft", response_model=GenerateResponse)
 async def compile_aircraft(request: dict):
     """
