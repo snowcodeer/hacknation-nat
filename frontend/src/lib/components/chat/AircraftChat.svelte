@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { aircraft, setComponentModel, setAllComponents } from '$lib/stores/aircraftStore';
+	import { aircraft, setComponentModel } from '$lib/stores/aircraftStore';
+	import { apiService } from '$lib/services/apiService';
 
 	let chatInput = '';
 	let isGenerating = false;
-	let chatHistory: Array<{ role: 'user' | 'assistant'; message: string }> = [];
+	let chatHistory: Array<{ role: 'user' | 'assistant'; message: string; timestamp: string }> = [];
 
 	const examples = [
 		'Build me an F-22 Raptor fighter jet',
@@ -12,6 +13,11 @@
 		'Make a C-130 cargo aircraft'
 	];
 
+	function formatTimestamp(): string {
+		const now = new Date();
+		return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+	}
+
 	async function handleSubmit() {
 		if (!chatInput.trim() || isGenerating) return;
 
@@ -19,7 +25,7 @@
 		chatInput = '';
 
 		// Add user message to history
-		chatHistory = [...chatHistory, { role: 'user', message: userMessage }];
+		chatHistory = [...chatHistory, { role: 'user', message: userMessage, timestamp: formatTimestamp() }];
 		isGenerating = true;
 
 		try {
@@ -37,7 +43,8 @@
 					...chatHistory,
 					{
 						role: 'assistant',
-						message: `Generated ${userMessage}! Click "Apply to Aircraft" to see it.`
+						message: `Generated ${userMessage} and applied to aircraft! Check the 3D preview and component tabs.`,
+						timestamp: formatTimestamp()
 					}
 				];
 
@@ -48,7 +55,8 @@
 					...chatHistory,
 					{
 						role: 'assistant',
-						message: `Error: ${data.error || 'Failed to generate aircraft'}`
+						message: `Error: ${data.error || 'Failed to generate aircraft'}`,
+						timestamp: formatTimestamp()
 					}
 				];
 			}
@@ -56,7 +64,11 @@
 			console.error('Chat error:', error);
 			chatHistory = [
 				...chatHistory,
-				{ role: 'assistant', message: `Error: ${error instanceof Error ? error.message : 'Unknown error'}` }
+				{
+					role: 'assistant',
+					message: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+					timestamp: formatTimestamp()
+				}
 			];
 		} finally {
 			isGenerating = false;
@@ -75,16 +87,11 @@
 
 	async function generateComponent(componentType: string, parameters: any) {
 		try {
-			const response = await fetch('/api/generate/update-parameters', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ parameters })
-			});
+			// Use apiService to properly map snake_case to camelCase
+			const response = await apiService.updateParameters(parameters);
 
-			const data = await response.json();
-
-			if (data.success && data.model) {
-				setComponentModel(componentType, data.model);
+			if (response.success && response.model) {
+				setComponentModel(componentType, response.model);
 			}
 		} catch (error) {
 			console.error(`Error generating ${componentType}:`, error);
@@ -96,170 +103,533 @@
 	}
 </script>
 
-<div class="aircraft-chat">
-	<h2>✈️ AI Aircraft Designer</h2>
-	<p class="subtitle">Describe any aircraft in natural language</p>
-
-	<div class="examples">
-		<p class="examples-label">Try these:</p>
-		{#each examples as example}
-			<button class="example-btn" on:click={() => useExample(example)}>
-				{example}
-			</button>
-		{/each}
+<div class="copilot-container">
+	<!-- Header -->
+	<div class="copilot-header">
+		<div class="header-top">
+			<span class="copilot-code">AI-COPILOT</span>
+			<div class="status-indicator active">
+				<div class="indicator-pulse"></div>
+				<span>ONLINE</span>
+			</div>
+		</div>
+		<h2 class="copilot-title">AI Co-Pilot</h2>
+		<div class="header-divider"></div>
 	</div>
 
-	<div class="chat-history">
-		{#each chatHistory as message}
-			<div class="message {message.role}">
-				<div class="message-icon">{message.role === 'user' ? '👤' : '🤖'}</div>
-				<div class="message-content">{message.message}</div>
+	<!-- Quick Commands -->
+	<div class="quick-commands">
+		<div class="commands-header">
+			<svg viewBox="0 0 16 16" fill="none">
+				<path d="M2 8L8 2L14 8M8 3V14" stroke="currentColor" stroke-width="1.5"/>
+			</svg>
+			<span>QUICK COMMANDS</span>
+		</div>
+		<div class="commands-grid">
+			{#each examples as example}
+				<button class="command-btn" on:click={() => useExample(example)} disabled={isGenerating}>
+					<svg viewBox="0 0 16 16" fill="none" class="command-icon">
+						<path d="M4 8H12M12 8L9 5M12 8L9 11" stroke="currentColor" stroke-width="1.5"/>
+					</svg>
+					<span>{example}</span>
+				</button>
+			{/each}
+		</div>
+	</div>
+
+	<!-- Chat Log -->
+	<div class="chat-log">
+		{#if chatHistory.length === 0}
+			<div class="empty-state">
+				<svg viewBox="0 0 64 64" fill="none">
+					<circle cx="32" cy="32" r="30" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4"/>
+					<path d="M32 20V32L40 36" stroke="currentColor" stroke-width="2"/>
+				</svg>
+				<p class="empty-title">No communications</p>
+				<p class="empty-subtitle">Use quick commands or type a request</p>
 			</div>
-		{/each}
+		{:else}
+			{#each chatHistory as message}
+				<div class="message {message.role}">
+					<div class="message-header">
+						<div class="message-sender">
+							{#if message.role === 'user'}
+								<svg viewBox="0 0 16 16" fill="none">
+									<circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/>
+									<path d="M2 14C2 11 5 9 8 9C11 9 14 11 14 14" stroke="currentColor" stroke-width="1.5"/>
+								</svg>
+								<span>USER</span>
+							{:else}
+								<svg viewBox="0 0 16 16" fill="none">
+									<rect x="3" y="3" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/>
+									<circle cx="6" cy="7" r="0.5" fill="currentColor"/>
+									<circle cx="10" cy="7" r="0.5" fill="currentColor"/>
+									<path d="M6 10L8 11L10 10" stroke="currentColor" stroke-width="1.5"/>
+								</svg>
+								<span>AI-COPILOT</span>
+							{/if}
+						</div>
+						<span class="message-time">{message.timestamp}</span>
+					</div>
+					<div class="message-content">{message.message}</div>
+				</div>
+			{/each}
+		{/if}
+
 		{#if isGenerating}
-			<div class="message assistant">
-				<div class="message-icon">🤖</div>
-				<div class="message-content">Generating aircraft parameters...</div>
+			<div class="message assistant generating">
+				<div class="message-header">
+					<div class="message-sender">
+						<svg viewBox="0 0 16 16" fill="none">
+							<rect x="3" y="3" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/>
+							<circle cx="6" cy="7" r="0.5" fill="currentColor"/>
+							<circle cx="10" cy="7" r="0.5" fill="currentColor"/>
+							<path d="M6 10L8 11L10 10" stroke="currentColor" stroke-width="1.5"/>
+						</svg>
+						<span>AI-COPILOT</span>
+					</div>
+					<span class="message-time">{formatTimestamp()}</span>
+				</div>
+				<div class="message-content">
+					<div class="processing">
+						<div class="processing-dots">
+							<div class="dot"></div>
+							<div class="dot"></div>
+							<div class="dot"></div>
+						</div>
+						<span>Processing aircraft parameters...</span>
+					</div>
+				</div>
 			</div>
 		{/if}
 	</div>
 
-	<form on:submit|preventDefault={handleSubmit} class="chat-input-form">
-		<input
-			type="text"
-			bind:value={chatInput}
-			placeholder="Describe your aircraft... (e.g., 'F-16 fighter jet')"
-			disabled={isGenerating}
-		/>
-		<button type="submit" disabled={!chatInput.trim() || isGenerating}>
-			{isGenerating ? 'Generating...' : 'Generate'}
+	<!-- Input Area -->
+	<form on:submit|preventDefault={handleSubmit} class="input-area">
+		<div class="input-wrapper">
+			<svg viewBox="0 0 16 16" fill="none" class="input-icon">
+				<path d="M2 8H14M8 2V14" stroke="currentColor" stroke-width="1.5"/>
+			</svg>
+			<input
+				type="text"
+				bind:value={chatInput}
+				placeholder="Describe aircraft specification..."
+				disabled={isGenerating}
+				class="input-field"
+			/>
+		</div>
+		<button type="submit" disabled={!chatInput.trim() || isGenerating} class="send-btn">
+			{#if isGenerating}
+				<div class="spinner-btn"></div>
+			{:else}
+				<svg viewBox="0 0 16 16" fill="none">
+					<path d="M2 8L14 2L10 8L14 14L2 8Z" fill="currentColor"/>
+				</svg>
+			{/if}
 		</button>
 	</form>
 </div>
 
 <style>
-	.aircraft-chat {
-		background: var(--color-bg-secondary, #1e293b);
-		border-radius: 8px;
-		padding: 1.5rem;
-		margin: 1rem 0;
+	.copilot-container {
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		background: var(--blueprint-bg-secondary);
 	}
 
-	h2 {
-		margin: 0 0 0.5rem 0;
-		color: var(--color-accent, #3b82f6);
+	/* HEADER */
+	.copilot-header {
+		padding: var(--space-5);
+		border-bottom: 1px solid var(--border-technical);
+		background: var(--blueprint-surface);
+		flex-shrink: 0;
 	}
 
-	.subtitle {
-		margin: 0 0 1rem 0;
-		color: var(--color-text-secondary, #94a3b8);
-		font-size: 0.9rem;
+	.header-top {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: var(--space-3);
 	}
 
-	.examples {
-		margin-bottom: 1rem;
-		padding: 1rem;
-		background: var(--color-bg, #0f172a);
-		border-radius: 6px;
+	.copilot-code {
+		font-family: var(--font-technical);
+		font-size: 0.625rem;
+		font-weight: 700;
+		letter-spacing: 0.15em;
+		color: var(--cyan-400);
+		padding: var(--space-1) var(--space-3);
+		background: var(--blueprint-bg);
+		border: 1px solid var(--border-technical);
 	}
 
-	.examples-label {
-		margin: 0 0 0.5rem 0;
-		font-size: 0.85rem;
-		color: var(--color-text-secondary, #94a3b8);
+	.status-indicator {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		font-size: 0.625rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		color: var(--gray-400);
 	}
 
-	.example-btn {
-		display: inline-block;
-		margin: 0.25rem;
-		padding: 0.4rem 0.8rem;
-		background: var(--color-bg-tertiary, #334155);
-		border: 1px solid var(--color-border, #475569);
-		border-radius: 4px;
-		color: var(--color-text, #e2e8f0);
-		font-size: 0.85rem;
+	.status-indicator.active {
+		color: var(--green-success);
+	}
+
+	.indicator-pulse {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: var(--green-success);
+		box-shadow: 0 0 10px var(--green-glow);
+		animation: pulse-bright 2s infinite;
+	}
+
+	@keyframes pulse-bright {
+		0%, 100% {
+			opacity: 1;
+			transform: scale(1);
+		}
+		50% {
+			opacity: 0.7;
+			transform: scale(0.85);
+		}
+	}
+
+	.copilot-title {
+		font-size: 1.25rem;
+		font-weight: 700;
+		color: var(--gray-100);
+		margin: 0;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+	}
+
+	.header-divider {
+		height: 1px;
+		background: linear-gradient(90deg, var(--cyan-600), transparent);
+		margin: var(--space-4) 0;
+	}
+
+	.copilot-desc {
+		font-size: 0.6875rem;
+		font-weight: 600;
+		letter-spacing: 0.1em;
+		color: var(--gray-400);
+		margin: 0;
+	}
+
+	/* QUICK COMMANDS */
+	.quick-commands {
+		padding: var(--space-4);
+		border-bottom: 1px solid var(--border-subtle);
+		flex-shrink: 0;
+	}
+
+	.commands-header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin-bottom: var(--space-3);
+		font-size: 0.5625rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		color: var(--gray-500);
+	}
+
+	.commands-header svg {
+		width: 12px;
+		height: 12px;
+	}
+
+	.commands-grid {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.command-btn {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-2) var(--space-3);
+		background: var(--blueprint-surface);
+		border: 1px solid var(--border-subtle);
+		color: var(--gray-300);
+		font-size: 0.6875rem;
+		text-align: left;
+		cursor: pointer;
+		transition: all 0.2s;
+		line-height: 1.3;
+	}
+
+	.command-icon {
+		width: 12px;
+		height: 12px;
+		flex-shrink: 0;
+		color: var(--cyan-500);
+	}
+
+	.command-btn:hover:not(:disabled) {
+		background: var(--blueprint-bg);
+		border-color: var(--cyan-600);
+		color: var(--gray-100);
+		transform: translateX(2px);
+	}
+
+	.command-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	/* CHAT LOG */
+	.chat-log {
+		flex: 1;
+		overflow-y: auto;
+		padding: var(--space-4);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	.empty-state {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-3);
+		color: var(--gray-500);
+		padding: var(--space-8);
+	}
+
+	.empty-state svg {
+		width: 64px;
+		height: 64px;
+		opacity: 0.3;
+	}
+
+	.empty-title {
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: var(--gray-400);
+		margin: 0;
+	}
+
+	.empty-subtitle {
+		font-size: 0.6875rem;
+		color: var(--gray-500);
+		margin: 0;
+		text-align: center;
+	}
+
+	/* MESSAGES */
+	.message {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+		padding: var(--space-3);
+		background: var(--blueprint-surface);
+		border: 1px solid var(--border-subtle);
+		border-left: 3px solid var(--border-subtle);
+	}
+
+	.message.user {
+		border-left-color: var(--cyan-500);
+		background: rgba(3, 169, 244, 0.05);
+	}
+
+	.message.assistant {
+		border-left-color: var(--green-success);
+		background: rgba(102, 187, 106, 0.05);
+	}
+
+	.message.generating {
+		border-left-color: var(--amber-warning);
+		background: rgba(255, 167, 38, 0.05);
+		animation: pulse-message 2s infinite;
+	}
+
+	@keyframes pulse-message {
+		0%, 100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.8;
+		}
+	}
+
+	.message-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: var(--space-1);
+	}
+
+	.message-sender {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		font-size: 0.5625rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		color: var(--gray-400);
+	}
+
+	.message.user .message-sender {
+		color: var(--cyan-400);
+	}
+
+	.message.assistant .message-sender {
+		color: var(--green-success);
+	}
+
+	.message.generating .message-sender {
+		color: var(--amber-warning);
+	}
+
+	.message-sender svg {
+		width: 14px;
+		height: 14px;
+	}
+
+	.message-time {
+		font-family: var(--font-technical);
+		font-size: 0.5625rem;
+		color: var(--gray-500);
+	}
+
+	.message-content {
+		font-size: 0.8125rem;
+		line-height: 1.5;
+		color: var(--gray-200);
+	}
+
+	.processing {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+	}
+
+	.processing-dots {
+		display: flex;
+		gap: var(--space-1);
+	}
+
+	.dot {
+		width: 4px;
+		height: 4px;
+		border-radius: 50%;
+		background: var(--amber-warning);
+		animation: bounce 1.4s infinite ease-in-out both;
+	}
+
+	.dot:nth-child(1) {
+		animation-delay: -0.32s;
+	}
+
+	.dot:nth-child(2) {
+		animation-delay: -0.16s;
+	}
+
+	@keyframes bounce {
+		0%, 80%, 100% {
+			transform: scale(0);
+		}
+		40% {
+			transform: scale(1);
+		}
+	}
+
+	/* INPUT AREA */
+	.input-area {
+		padding: var(--space-4);
+		border-top: 1px solid var(--border-technical);
+		background: var(--blueprint-surface);
+		display: flex;
+		gap: var(--space-2);
+		flex-shrink: 0;
+	}
+
+	.input-wrapper {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-3);
+		background: var(--blueprint-bg);
+		border: 1px solid var(--border-subtle);
+		transition: all 0.2s;
+	}
+
+	.input-wrapper:focus-within {
+		border-color: var(--cyan-500);
+		box-shadow: 0 0 10px var(--cyan-glow);
+	}
+
+	.input-icon {
+		width: 14px;
+		height: 14px;
+		color: var(--gray-500);
+	}
+
+	.input-field {
+		flex: 1;
+		background: transparent;
+		border: none;
+		outline: none;
+		color: var(--gray-100);
+		font-size: 0.8125rem;
+		padding: 0;
+	}
+
+	.input-field::placeholder {
+		color: var(--gray-500);
+	}
+
+	.send-btn {
+		width: 44px;
+		height: 44px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: linear-gradient(135deg, var(--cyan-700), var(--cyan-600));
+		border: 1px solid var(--cyan-500);
+		color: white;
 		cursor: pointer;
 		transition: all 0.2s;
 	}
 
-	.example-btn:hover {
-		background: var(--color-accent, #3b82f6);
-		border-color: var(--color-accent, #3b82f6);
+	.send-btn svg {
+		width: 16px;
+		height: 16px;
 	}
 
-	.chat-history {
-		max-height: 300px;
-		overflow-y: auto;
-		margin-bottom: 1rem;
-		padding: 0.5rem;
-		background: var(--color-bg, #0f172a);
-		border-radius: 6px;
+	.send-btn:hover:not(:disabled) {
+		background: linear-gradient(135deg, var(--cyan-600), var(--cyan-500));
+		box-shadow: 0 0 15px var(--cyan-glow);
+		transform: translateY(-1px);
 	}
 
-	.message {
-		display: flex;
-		gap: 0.75rem;
-		margin-bottom: 1rem;
-		padding: 0.75rem;
-		border-radius: 6px;
-	}
-
-	.message.user {
-		background: var(--color-bg-tertiary, #334155);
-	}
-
-	.message.assistant {
-		background: var(--color-accent-dark, #1e40af);
-	}
-
-	.message-icon {
-		font-size: 1.5rem;
-		flex-shrink: 0;
-	}
-
-	.message-content {
-		flex: 1;
-		color: var(--color-text, #e2e8f0);
-		line-height: 1.5;
-	}
-
-	.chat-input-form {
-		display: flex;
-		gap: 0.5rem;
-	}
-
-	input {
-		flex: 1;
-		padding: 0.75rem;
-		background: var(--color-bg, #0f172a);
-		border: 1px solid var(--color-border, #475569);
-		border-radius: 6px;
-		color: var(--color-text, #e2e8f0);
-		font-size: 0.95rem;
-	}
-
-	input:focus {
-		outline: none;
-		border-color: var(--color-accent, #3b82f6);
-	}
-
-	button[type='submit'] {
-		padding: 0.75rem 1.5rem;
-		background: var(--color-accent, #3b82f6);
-		color: white;
-		border: none;
-		border-radius: 6px;
-		font-weight: 500;
-		cursor: pointer;
-		transition: background 0.2s;
-	}
-
-	button[type='submit']:hover:not(:disabled) {
-		background: var(--color-accent-dark, #2563eb);
-	}
-
-	button[type='submit']:disabled {
-		opacity: 0.5;
+	.send-btn:disabled {
+		background: var(--blueprint-bg);
+		border-color: var(--border-subtle);
+		color: var(--gray-500);
 		cursor: not-allowed;
+	}
+
+	.spinner-btn {
+		width: 16px;
+		height: 16px;
+		border: 2px solid rgba(255, 255, 255, 0.3);
+		border-top-color: white;
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
+	}
+
+	@keyframes spin {
+		to { transform: rotate(360deg); }
 	}
 </style>

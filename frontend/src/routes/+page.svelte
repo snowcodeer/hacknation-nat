@@ -26,11 +26,12 @@
 		engines: 'Engines'
 	};
 
-	const componentIcons: Record<ComponentType, string> = {
-		wings: '✈️',
-		fuselage: '🚀',
-		tail_assembly: '📐',
-		engines: '🔧'
+	// Technical component codes
+	const componentCodes: Record<ComponentType, string> = {
+		wings: 'WNG-01',
+		fuselage: 'FSL-02',
+		tail_assembly: 'TAL-03',
+		engines: 'ENG-04'
 	};
 
 	function selectComponent(type: ComponentType) {
@@ -45,6 +46,7 @@
 	$: canAssemble = $isAssemblyReady;
 	$: assemblyComponentCount = $allComponents.length;
 	$: canCompile = $allComponentsComplete && !$compiledAircraft;
+	$: assemblyProgress = (assemblyComponentCount / 4) * 100;
 
 	async function handleCompileAircraft() {
 		isCompiling.set(true);
@@ -69,128 +71,257 @@
 </script>
 
 <main class="app-container">
+	<!-- Technical Header with Status -->
 	<header class="app-header">
-		<div class="header-content">
-			<div>
-				<h1>AeroCraft</h1>
-				<p>AI-Powered Multi-Component Aircraft Designer</p>
+		<div class="header-grid">
+			<!-- Left: Branding -->
+			<div class="header-brand">
+				<div class="brand-icon">
+					<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+						<path d="M12 2L2 12L12 16L22 12L12 2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="bevel"/>
+						<path d="M2 12L12 22L22 12" stroke="currentColor" stroke-width="1.5" stroke-linejoin="bevel"/>
+					</svg>
+				</div>
+				<div class="brand-text">
+					<h1>AEROCRAFT</h1>
+					<span class="brand-subtitle">CAD SYSTEM v2.1</span>
+				</div>
 			</div>
-			<div class="header-stats">
-				<div class="component-count">{assemblyComponentCount}/4 Components</div>
+
+			<!-- Center: Assembly Progress -->
+			<div class="header-status">
+				<div class="status-row">
+					<span class="status-label">ASSEMBLY STATUS</span>
+					<span class="status-value">{assemblyComponentCount}/4 MODULES</span>
+				</div>
+				<div class="progress-track">
+					<div class="progress-bar" style="width: {assemblyProgress}%"></div>
+					<div class="progress-markers">
+						<div class="marker"></div>
+						<div class="marker"></div>
+						<div class="marker"></div>
+						<div class="marker"></div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Right: System Controls -->
+			<div class="header-controls">
 				<button
-					class="assembly-btn-header"
+					class="control-btn assembly-btn"
+					class:active={viewMode === 'assembly'}
 					class:disabled={!canAssemble}
 					disabled={!canAssemble}
 					on:click={goToAssembly}
 				>
-					🔧 Assembly
+					<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+						<rect x="3" y="3" width="8" height="8" stroke="currentColor" stroke-width="1.5"/>
+						<rect x="13" y="3" width="8" height="8" stroke="currentColor" stroke-width="1.5"/>
+						<rect x="3" y="13" width="8" height="8" stroke="currentColor" stroke-width="1.5"/>
+						<rect x="13" y="13" width="8" height="8" stroke="currentColor" stroke-width="1.5"/>
+					</svg>
+					<span>ASSEMBLY</span>
 				</button>
 			</div>
 		</div>
 	</header>
 
 	<div class="workspace">
-		<!-- Left: Editor -->
-		<section class="editor-area">
-			<!-- Chat Interface -->
-			<AircraftChat />
-
+		<!-- Left Panel: Component Editor -->
+		<section class="editor-panel">
 			{#if viewMode === 'edit'}
-				<div class="editor-header">
-					<h2>{componentIcons[$activeComponent]} {componentLabels[$activeComponent]}</h2>
+				<!-- Component Header with Technical Details -->
+				<div class="panel-header">
+					<div class="header-top">
+						<span class="component-code">{componentCodes[$activeComponent]}</span>
+						<div class="status-indicator" class:complete={$completionStatus[$activeComponent]}>
+							<div class="indicator-dot"></div>
+							<span>{$completionStatus[$activeComponent] ? 'READY' : 'CONFIG'}</span>
+						</div>
+					</div>
+					<h2 class="component-title">{componentLabels[$activeComponent]}</h2>
+					<div class="header-divider"></div>
+					<p class="component-desc">PARAMETRIC CONFIGURATION</p>
 				</div>
-				<div class="editor-content">
+
+				<!-- Parameter Controls -->
+				<div class="panel-content">
 					<ComponentEditor componentType={$activeComponent} />
 				</div>
 			{:else}
-				<div class="assembly-view">
-					<div class="assembly-header">
-						<h2>🔧 Assembly View</h2>
-						<p>Review your complete aircraft design</p>
+				<!-- Assembly View -->
+				<div class="panel-header">
+					<div class="header-top">
+						<span class="component-code">ASM-MAIN</span>
+						<div class="status-indicator complete">
+							<div class="indicator-dot"></div>
+							<span>ASSEMBLY</span>
+						</div>
 					</div>
-					<div class="assembly-content">
-						<div class="assembly-summary">
-							<h3>Components Summary</h3>
-							<div class="summary-grid">
-								{#each Object.entries(componentLabels) as [type, label]}
-									{#if $completionStatus[type]}
-										<div class="summary-item complete">
-											<span class="summary-icon">{componentIcons[type]}</span>
-											<span class="summary-label">{label}</span>
-											<span class="summary-check">✓</span>
-										</div>
-									{:else}
-										<div class="summary-item incomplete">
-											<span class="summary-icon">{componentIcons[type]}</span>
-											<span class="summary-label">{label}</span>
-											<span class="summary-status">Not added</span>
-										</div>
-									{/if}
-								{/each}
+					<h2 class="component-title">Final Assembly</h2>
+					<div class="header-divider"></div>
+					<p class="component-desc">AIRCRAFT COMPILATION</p>
+				</div>
+
+				<div class="panel-content">
+					<!-- Component Tree -->
+					<div class="assembly-tree">
+						<div class="tree-title">MODULE STATUS</div>
+						{#each Object.entries(componentLabels) as [type, label]}
+							<div class="tree-node" class:complete={$completionStatus[type]}>
+								<div class="node-connector"></div>
+								<div class="node-content">
+									<div class="node-header">
+										<span class="node-code">{componentCodes[type]}</span>
+										<span class="node-label">{label}</span>
+									</div>
+									<div class="node-status">
+										{#if $completionStatus[type]}
+											<svg class="check-icon" viewBox="0 0 24 24" fill="none">
+												<path d="M5 12L10 17L20 7" stroke="currentColor" stroke-width="2" stroke-linecap="square"/>
+											</svg>
+											<span>CONFIGURED</span>
+										{:else}
+											<span class="pending">PENDING</span>
+										{/if}
+									</div>
+								</div>
 							</div>
-						</div>
+						{/each}
+					</div>
 
-						<div class="compile-section">
-							<button
-								class="compile-btn"
-								class:disabled={!canCompile}
-								disabled={!canCompile || $isCompiling}
-								on:click={handleCompileAircraft}
-							>
-								{#if $isCompiling}
-									⚙️ Compiling...
-								{:else if $compiledAircraft}
-									✓ Aircraft Compiled
-								{:else}
-									🔧 Compile Aircraft
-								{/if}
-							</button>
-							{#if !$allComponentsComplete}
-								<p class="compile-hint">Complete all 4 components to compile</p>
+					<!-- Compilation Controls -->
+					<div class="compile-section">
+						<div class="compile-header">
+							<svg viewBox="0 0 24 24" fill="none">
+								<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+								<path d="M12 6V12L16 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+							</svg>
+							<span>COMPILATION</span>
+						</div>
+						<button
+							class="compile-btn"
+							class:disabled={!canCompile}
+							class:compiling={$isCompiling}
+							disabled={!canCompile || $isCompiling}
+							on:click={handleCompileAircraft}
+						>
+							{#if $isCompiling}
+								<div class="spinner"></div>
+								<span>COMPILING...</span>
 							{:else if $compiledAircraft}
-								<p class="compile-success">Aircraft ready for export!</p>
+								<svg viewBox="0 0 24 24" fill="none">
+									<path d="M5 12L10 17L20 7" stroke="currentColor" stroke-width="2"/>
+								</svg>
+								<span>COMPILED</span>
+							{:else}
+								<svg viewBox="0 0 24 24" fill="none">
+									<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+									<path d="M10 8L16 12L10 16V8Z" fill="currentColor"/>
+								</svg>
+								<span>COMPILE AIRCRAFT</span>
 							{/if}
-						</div>
+						</button>
+						{#if !$allComponentsComplete}
+							<p class="compile-hint">Complete all modules to enable compilation</p>
+						{:else if $compiledAircraft}
+							<p class="compile-success">Aircraft compiled successfully</p>
+						{/if}
+					</div>
 
-						<div class="export-section">
-							<h3>Export Aircraft</h3>
-							<ExportPanel />
+					<!-- Export Section -->
+					<div class="export-section">
+						<div class="section-header">
+							<svg viewBox="0 0 24 24" fill="none">
+								<path d="M12 2L12 16M12 2L8 6M12 2L16 6" stroke="currentColor" stroke-width="1.5"/>
+								<path d="M3 16L3 20L21 20L21 16" stroke="currentColor" stroke-width="1.5"/>
+							</svg>
+							<span>EXPORT</span>
 						</div>
+						<ExportPanel />
 					</div>
 				</div>
 			{/if}
 		</section>
 
-		<!-- Right: 3D Viewer -->
-		<section class="viewer-container">
-			<div class="viewer-header">
-				<h3>3D Preview</h3>
-				<span class="viewer-mode">
-					{viewMode === 'assembly' ? 'Assembly' : componentLabels[$activeComponent]}
-				</span>
+		<!-- Center: 3D Viewport -->
+		<section class="viewer-section">
+			<div class="viewport-header">
+				<div class="viewport-info">
+					<span class="viewport-label">3D VIEWPORT</span>
+					<div class="viewport-mode">
+						<div class="mode-indicator"></div>
+						<span>{viewMode === 'assembly' ? 'ASSEMBLY VIEW' : componentLabels[$activeComponent]}</span>
+					</div>
+				</div>
+				<div class="viewport-coords">
+					<div class="coord-item">
+						<span class="coord-label">X</span>
+						<span class="coord-value">0.00</span>
+					</div>
+					<div class="coord-item">
+						<span class="coord-label">Y</span>
+						<span class="coord-value">0.00</span>
+					</div>
+					<div class="coord-item">
+						<span class="coord-label">Z</span>
+						<span class="coord-value">0.00</span>
+					</div>
+				</div>
 			</div>
-			<div class="viewer-wrapper">
+
+			<div class="viewport-canvas">
 				<Viewer3D {viewMode} />
+
+				<!-- Corner Brackets (CAD aesthetic) -->
+				<div class="viewport-brackets">
+					<div class="bracket top-left"></div>
+					<div class="bracket top-right"></div>
+					<div class="bracket bottom-left"></div>
+					<div class="bracket bottom-right"></div>
+				</div>
 			</div>
+		</section>
+
+		<!-- Right Panel: AI Co-Pilot -->
+		<section class="copilot-panel">
+			<AircraftChat />
 		</section>
 	</div>
 
-	<!-- Component Tabs at Bottom -->
-	<nav class="component-tabs">
+	<!-- Bottom: Component Module Selector -->
+	<nav class="module-selector">
 		{#each Object.entries(componentLabels) as [type, label]}
 			<button
-				class="tab"
+				class="module-tab"
 				class:active={$activeComponent === type && viewMode === 'edit'}
-				class:completed={$completionStatus[type]}
+				class:complete={$completionStatus[type]}
+				class:generating={$aircraft[type]?.isGenerating}
 				on:click={() => selectComponent(type)}
 			>
-				<span class="tab-icon">{componentIcons[type]}</span>
+				<div class="tab-header">
+					<span class="tab-code">{componentCodes[type]}</span>
+					{#if $completionStatus[type]}
+						<div class="tab-status complete">
+							<svg viewBox="0 0 16 16" fill="none">
+								<circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/>
+								<path d="M5 8L7 10L11 6" stroke="currentColor" stroke-width="1.5"/>
+							</svg>
+						</div>
+					{:else if $aircraft[type]?.isGenerating}
+						<div class="tab-status generating">
+							<div class="spinner-small"></div>
+						</div>
+					{:else}
+						<div class="tab-status pending">
+							<svg viewBox="0 0 16 16" fill="none">
+								<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 2"/>
+							</svg>
+						</div>
+					{/if}
+				</div>
 				<span class="tab-label">{label}</span>
-				{#if $completionStatus[type]}
-					<span class="tab-status complete">✓</span>
-				{:else if $aircraft[type].isGenerating}
-					<span class="tab-status generating">...</span>
-				{/if}
+				<div class="tab-indicator"></div>
 			</button>
 		{/each}
 	</nav>
@@ -202,383 +333,757 @@
 		height: 100vh;
 		display: flex;
 		flex-direction: column;
-		background: #0f172a;
-		color: #f1f5f9;
+		background: var(--blueprint-bg);
+		position: relative;
+		z-index: 1;
 	}
 
+	/* HEADER STYLES */
 	.app-header {
-		padding: 1rem 2rem;
-		background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-		border-bottom: 2px solid #334155;
+		background: var(--blueprint-surface);
+		border-bottom: 2px solid var(--border-technical);
+		box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+		position: relative;
+		z-index: 10;
 	}
 
-	.header-content {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-	}
-
-	.app-header h1 {
-		font-size: 1.75rem;
-		margin: 0;
-		background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		background-clip: text;
-		font-weight: 700;
-	}
-
-	.app-header p {
-		margin: 0.25rem 0 0;
-		font-size: 0.875rem;
-		color: #94a3b8;
-	}
-
-	.header-stats {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-	}
-
-	.component-count {
-		padding: 0.5rem 1rem;
-		background: #1e293b;
-		border: 2px solid #334155;
-		border-radius: 0.5rem;
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: #60a5fa;
-	}
-
-	.assembly-btn-header {
-		padding: 0.5rem 1rem;
-		background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-		border: none;
-		border-radius: 0.5rem;
-		color: white;
-		font-size: 0.875rem;
-		font-weight: 600;
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-
-	.assembly-btn-header:not(:disabled):hover {
-		transform: translateY(-2px);
-		box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
-	}
-
-	.assembly-btn-header.disabled {
-		background: #334155;
-		color: #64748b;
-		cursor: not-allowed;
-		opacity: 0.5;
-	}
-
-	.workspace {
-		flex: 1;
+	.header-grid {
 		display: grid;
-		grid-template-columns: minmax(400px, 650px) 1fr;
-		overflow: hidden;
+		grid-template-columns: 1fr 2fr 1fr;
+		gap: var(--space-6);
+		padding: var(--space-4) var(--space-6);
+		align-items: center;
 	}
 
-	/* Editor Area */
-	.editor-area {
-		background: #0f172a;
-		overflow-y: auto;
+	/* Brand */
+	.header-brand {
 		display: flex;
-		flex-direction: column;
-		border-right: 2px solid #334155;
+		align-items: center;
+		gap: var(--space-4);
 	}
 
-	.editor-header {
-		padding: 2rem;
-		border-bottom: 2px solid #334155;
+	.brand-icon {
+		width: 40px;
+		height: 40px;
+		color: var(--cyan-400);
 	}
 
-	.editor-header h2 {
-		font-size: 1.5rem;
-		font-weight: 700;
-		color: #f1f5f9;
-		margin: 0;
-	}
-
-	.editor-header p {
-		margin: 0.5rem 0 0;
-		font-size: 0.875rem;
-		color: #94a3b8;
-	}
-
-	.editor-content {
-		padding: 2rem;
-		flex: 1;
-	}
-
-	/* Assembly View */
-	.assembly-view {
-		display: flex;
-		flex-direction: column;
+	.brand-icon svg {
+		width: 100%;
 		height: 100%;
 	}
 
-	.assembly-header {
-		padding: 2rem;
-		border-bottom: 2px solid #334155;
-	}
-
-	.assembly-header h2 {
-		font-size: 1.5rem;
-		font-weight: 700;
-		color: #f1f5f9;
-		margin: 0;
-	}
-
-	.assembly-header p {
-		margin: 0.5rem 0 0;
-		font-size: 0.875rem;
-		color: #94a3b8;
-	}
-
-	.assembly-content {
-		padding: 2rem;
-		flex: 1;
-		overflow-y: auto;
-		display: flex;
-		flex-direction: column;
-		gap: 2rem;
-	}
-
-	.assembly-summary h3 {
-		font-size: 1rem;
-		font-weight: 600;
-		color: #f1f5f9;
-		margin: 0 0 1rem;
-	}
-
-	.summary-grid {
-		display: grid;
-		gap: 0.75rem;
-	}
-
-	.summary-item {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		padding: 1rem;
-		background: #1e293b;
-		border: 2px solid #334155;
-		border-radius: 0.5rem;
-	}
-
-	.summary-item.complete {
-		border-color: #10b981;
-	}
-
-	.summary-icon {
-		font-size: 1.25rem;
-	}
-
-	.summary-label {
-		flex: 1;
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: #f1f5f9;
-	}
-
-	.summary-check {
-		color: #10b981;
+	.brand-text h1 {
 		font-size: 1.25rem;
 		font-weight: 700;
+		letter-spacing: 0.15em;
+		color: var(--gray-100);
+		margin: 0;
+		line-height: 1;
 	}
 
-	.summary-status {
-		font-size: 0.75rem;
-		color: #64748b;
+	.brand-subtitle {
+		display: block;
+		font-size: 0.625rem;
+		font-family: var(--font-technical);
+		letter-spacing: 0.1em;
+		color: var(--cyan-400);
+		margin-top: var(--space-1);
 	}
 
-	.compile-section {
+	/* Status */
+	.header-status {
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
-		padding: 1.5rem;
-		background: #1e293b;
-		border: 2px solid #334155;
-		border-radius: 0.75rem;
+		gap: var(--space-2);
 	}
 
-	.compile-btn {
-		padding: 1rem 1.5rem;
-		background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-		border: none;
-		border-radius: 0.5rem;
-		color: white;
-		font-size: 1rem;
-		font-weight: 700;
-		cursor: pointer;
-		transition: all 0.3s;
-		box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
-	}
-
-	.compile-btn:not(:disabled):hover {
-		transform: translateY(-2px);
-		box-shadow: 0 8px 20px rgba(139, 92, 246, 0.5);
-	}
-
-	.compile-btn.disabled {
-		background: #334155;
-		color: #64748b;
-		cursor: not-allowed;
-		opacity: 0.6;
-		box-shadow: none;
-	}
-
-	.compile-hint {
-		margin: 0;
-		font-size: 0.8125rem;
-		color: #94a3b8;
-		text-align: center;
-	}
-
-	.compile-success {
-		margin: 0;
-		font-size: 0.8125rem;
-		color: #10b981;
-		text-align: center;
-		font-weight: 600;
-	}
-
-	.export-section h3 {
-		font-size: 1rem;
-		font-weight: 600;
-		color: #f1f5f9;
-		margin: 0 0 1rem;
-	}
-
-	/* 3D Viewer */
-	.viewer-container {
-		background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
-		display: flex;
-		flex-direction: column;
-		overflow: hidden;
-	}
-
-	.viewer-header {
-		padding: 1rem 1.5rem;
-		background: rgba(30, 41, 59, 0.5);
-		border-bottom: 2px solid #334155;
+	.status-row {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		flex-shrink: 0;
 	}
 
-	.viewer-header h3 {
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: #94a3b8;
-		margin: 0;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
+	.status-label {
+		font-size: 0.625rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		color: var(--gray-400);
 	}
 
-	.viewer-mode {
-		padding: 0.375rem 0.75rem;
-		background: #1e293b;
-		border: 1px solid #334155;
-		border-radius: 0.375rem;
+	.status-value {
+		font-family: var(--font-technical);
 		font-size: 0.75rem;
 		font-weight: 600;
-		color: #60a5fa;
+		color: var(--cyan-400);
 	}
 
-	.viewer-wrapper {
-		flex: 1;
+	.progress-track {
 		position: relative;
-		min-height: 0;
+		height: 6px;
+		background: var(--blueprint-bg-secondary);
+		border: 1px solid var(--border-technical);
+		border-radius: 3px;
 		overflow: hidden;
 	}
 
-	/* Component Tabs */
-	.component-tabs {
-		display: flex;
-		background: #1e293b;
-		border-top: 2px solid #334155;
-		padding: 0;
-		flex-shrink: 0;
+	.progress-bar {
+		position: absolute;
+		left: 0;
+		top: 0;
+		height: 100%;
+		background: linear-gradient(90deg, var(--cyan-600), var(--cyan-400));
+		transition: width 0.4s ease;
+		box-shadow: 0 0 10px var(--cyan-glow);
 	}
 
-	.tab {
-		flex: 1;
+	.progress-markers {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
 		display: flex;
-		flex-direction: column;
+		justify-content: space-between;
+		padding: 0 0.5%;
+	}
+
+	.marker {
+		width: 2px;
+		height: 100%;
+		background: var(--blueprint-surface);
+	}
+
+	/* Controls */
+	.header-controls {
+		display: flex;
+		justify-content: flex-end;
+		gap: var(--space-3);
+	}
+
+	.control-btn {
+		display: flex;
 		align-items: center;
-		justify-content: center;
-		gap: 0.5rem;
-		padding: 1rem;
-		background: transparent;
-		border: none;
-		border-right: 1px solid #334155;
-		color: #94a3b8;
+		gap: var(--space-2);
+		padding: var(--space-3) var(--space-5);
+		background: var(--blueprint-bg-secondary);
+		border: 1px solid var(--border-technical);
+		color: var(--cyan-400);
+		font-size: 0.75rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
 		cursor: pointer;
 		transition: all 0.2s;
 		position: relative;
+		overflow: hidden;
 	}
 
-	.tab:last-child {
+	.control-btn svg {
+		width: 18px;
+		height: 18px;
+	}
+
+	.control-btn:hover:not(:disabled) {
+		background: var(--blueprint-surface);
+		border-color: var(--cyan-500);
+		box-shadow: 0 0 15px var(--cyan-glow);
+	}
+
+	.control-btn.active {
+		background: var(--cyan-600);
+		border-color: var(--cyan-500);
+		color: white;
+		box-shadow: 0 0 20px var(--cyan-glow);
+	}
+
+	.control-btn.disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
+		border-color: var(--border-subtle);
+		color: var(--gray-500);
+	}
+
+	/* WORKSPACE */
+	.workspace {
+		flex: 1;
+		display: grid;
+		grid-template-columns: 340px 1fr 280px;
+		overflow: hidden;
+		position: relative;
+	}
+
+	/* PANEL STYLES */
+	.editor-panel,
+	.copilot-panel {
+		background: var(--blueprint-bg-secondary);
+		border-right: 1px solid var(--border-technical);
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		position: relative;
+	}
+
+	.copilot-panel {
+		border-right: none;
+		border-left: 1px solid var(--border-technical);
+	}
+
+	.panel-header {
+		padding: var(--space-5);
+		border-bottom: 1px solid var(--border-technical);
+		background: var(--blueprint-surface);
+		flex-shrink: 0;
+	}
+
+	.header-top {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: var(--space-3);
+	}
+
+	.component-code {
+		font-family: var(--font-technical);
+		font-size: 0.625rem;
+		font-weight: 700;
+		letter-spacing: 0.15em;
+		color: var(--cyan-400);
+		padding: var(--space-1) var(--space-3);
+		background: var(--blueprint-bg);
+		border: 1px solid var(--border-technical);
+	}
+
+	.status-indicator {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		font-size: 0.625rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		color: var(--gray-400);
+	}
+
+	.indicator-dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: var(--gray-500);
+		border: 1px solid var(--gray-400);
+		animation: pulse-subtle 2s infinite;
+	}
+
+	.status-indicator.complete .indicator-dot {
+		background: var(--green-success);
+		border-color: var(--green-success);
+		box-shadow: 0 0 10px var(--green-glow);
+	}
+
+	.status-indicator.complete {
+		color: var(--green-success);
+	}
+
+	@keyframes pulse-subtle {
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0.6; }
+	}
+
+	.component-title {
+		font-size: 1.25rem;
+		font-weight: 700;
+		color: var(--gray-100);
+		margin: 0;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+	}
+
+	.header-divider {
+		height: 1px;
+		background: linear-gradient(90deg, var(--cyan-600), transparent);
+		margin: var(--space-4) 0;
+	}
+
+	.component-desc {
+		font-size: 0.6875rem;
+		font-weight: 600;
+		letter-spacing: 0.1em;
+		color: var(--gray-400);
+		margin: 0;
+	}
+
+	.panel-content {
+		flex: 1;
+		overflow-y: auto;
+		padding: var(--space-5);
+	}
+
+	/* ASSEMBLY TREE */
+	.assembly-tree {
+		margin-bottom: var(--space-6);
+	}
+
+	.tree-title {
+		font-size: 0.625rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		color: var(--gray-400);
+		margin-bottom: var(--space-4);
+		padding-bottom: var(--space-2);
+		border-bottom: 1px solid var(--border-subtle);
+	}
+
+	.tree-node {
+		display: flex;
+		gap: var(--space-3);
+		margin-bottom: var(--space-4);
+		position: relative;
+	}
+
+	.node-connector {
+		width: 2px;
+		background: var(--border-subtle);
+		position: relative;
+	}
+
+	.tree-node.complete .node-connector {
+		background: var(--green-success);
+		box-shadow: 0 0 5px var(--green-glow);
+	}
+
+	.node-connector::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: 50%;
+		width: 12px;
+		height: 2px;
+		background: inherit;
+	}
+
+	.node-content {
+		flex: 1;
+		padding: var(--space-3);
+		background: var(--blueprint-surface);
+		border: 1px solid var(--border-subtle);
+		transition: all 0.2s;
+	}
+
+	.tree-node.complete .node-content {
+		border-color: var(--green-success);
+		background: rgba(102, 187, 106, 0.05);
+	}
+
+	.node-header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		margin-bottom: var(--space-2);
+	}
+
+	.node-code {
+		font-family: var(--font-technical);
+		font-size: 0.625rem;
+		font-weight: 700;
+		color: var(--cyan-400);
+	}
+
+	.node-label {
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: var(--gray-200);
+	}
+
+	.node-status {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		font-size: 0.625rem;
+		font-weight: 600;
+		letter-spacing: 0.05em;
+		color: var(--green-success);
+	}
+
+	.check-icon {
+		width: 14px;
+		height: 14px;
+	}
+
+	.pending {
+		color: var(--gray-500);
+	}
+
+	/* COMPILATION SECTION */
+	.compile-section {
+		margin-bottom: var(--space-6);
+		padding: var(--space-5);
+		background: var(--blueprint-surface);
+		border: 1px solid var(--border-technical);
+		position: relative;
+	}
+
+	.compile-header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin-bottom: var(--space-4);
+		font-size: 0.625rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		color: var(--cyan-400);
+	}
+
+	.compile-header svg {
+		width: 16px;
+		height: 16px;
+	}
+
+	.compile-btn {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-3);
+		padding: var(--space-4);
+		background: linear-gradient(135deg, var(--cyan-700), var(--cyan-600));
+		border: 1px solid var(--cyan-500);
+		color: white;
+		font-size: 0.8125rem;
+		font-weight: 700;
+		letter-spacing: 0.05em;
+		cursor: pointer;
+		transition: all 0.3s;
+		text-transform: uppercase;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+	}
+
+	.compile-btn svg {
+		width: 20px;
+		height: 20px;
+	}
+
+	.compile-btn:hover:not(:disabled) {
+		background: linear-gradient(135deg, var(--cyan-600), var(--cyan-500));
+		box-shadow: 0 6px 20px var(--cyan-glow);
+		transform: translateY(-1px);
+	}
+
+	.compile-btn.disabled {
+		background: var(--blueprint-bg);
+		border-color: var(--border-subtle);
+		color: var(--gray-500);
+		cursor: not-allowed;
+		box-shadow: none;
+	}
+
+	.compile-btn.compiling {
+		background: var(--amber-warning);
+		border-color: var(--amber-warning);
+		animation: pulse-glow 1.5s infinite;
+	}
+
+	@keyframes pulse-glow {
+		0%, 100% {
+			box-shadow: 0 4px 12px rgba(255, 167, 38, 0.3);
+		}
+		50% {
+			box-shadow: 0 6px 24px rgba(255, 167, 38, 0.6);
+		}
+	}
+
+	.spinner {
+		width: 18px;
+		height: 18px;
+		border: 2px solid rgba(255, 255, 255, 0.3);
+		border-top-color: white;
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
+	}
+
+	@keyframes spin {
+		to { transform: rotate(360deg); }
+	}
+
+	.compile-hint,
+	.compile-success {
+		margin-top: var(--space-3);
+		font-size: 0.6875rem;
+		text-align: center;
+		color: var(--gray-400);
+	}
+
+	.compile-success {
+		color: var(--green-success);
+	}
+
+	/* EXPORT SECTION */
+	.export-section {
+		padding: var(--space-5);
+		background: var(--blueprint-surface);
+		border: 1px solid var(--border-technical);
+	}
+
+	.section-header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin-bottom: var(--space-4);
+		font-size: 0.625rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		color: var(--cyan-400);
+	}
+
+	.section-header svg {
+		width: 16px;
+		height: 16px;
+	}
+
+	/* 3D VIEWPORT */
+	.viewer-section {
+		background: var(--blueprint-bg);
+		display: flex;
+		flex-direction: column;
+		position: relative;
+		overflow: hidden;
+	}
+
+	.viewport-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: var(--space-4) var(--space-5);
+		background: rgba(15, 31, 54, 0.8);
+		border-bottom: 1px solid var(--border-technical);
+		backdrop-filter: blur(10px);
+		z-index: 5;
+	}
+
+	.viewport-info {
+		display: flex;
+		align-items: center;
+		gap: var(--space-5);
+	}
+
+	.viewport-label {
+		font-size: 0.625rem;
+		font-weight: 700;
+		letter-spacing: 0.15em;
+		color: var(--gray-400);
+	}
+
+	.viewport-mode {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-2) var(--space-3);
+		background: var(--blueprint-surface);
+		border: 1px solid var(--border-technical);
+		font-size: 0.6875rem;
+		font-weight: 600;
+		letter-spacing: 0.05em;
+		color: var(--cyan-400);
+	}
+
+	.mode-indicator {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: var(--cyan-500);
+		box-shadow: 0 0 8px var(--cyan-glow);
+		animation: pulse-bright 2s infinite;
+	}
+
+	@keyframes pulse-bright {
+		0%, 100% {
+			opacity: 1;
+			transform: scale(1);
+		}
+		50% {
+			opacity: 0.7;
+			transform: scale(0.9);
+		}
+	}
+
+	.viewport-coords {
+		display: flex;
+		gap: var(--space-4);
+	}
+
+	.coord-item {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-1);
+	}
+
+	.coord-label {
+		font-size: 0.5625rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		color: var(--gray-500);
+	}
+
+	.coord-value {
+		font-family: var(--font-technical);
+		font-size: 0.6875rem;
+		font-weight: 600;
+		color: var(--cyan-400);
+	}
+
+	.viewport-canvas {
+		flex: 1;
+		position: relative;
+		overflow: hidden;
+	}
+
+	/* Corner Brackets */
+	.viewport-brackets {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		pointer-events: none;
+		z-index: 2;
+	}
+
+	.bracket {
+		position: absolute;
+		width: 40px;
+		height: 40px;
+		border: 2px solid var(--cyan-600);
+		opacity: 0.6;
+	}
+
+	.bracket.top-left {
+		top: 20px;
+		left: 20px;
+		border-right: none;
+		border-bottom: none;
+	}
+
+	.bracket.top-right {
+		top: 20px;
+		right: 20px;
+		border-left: none;
+		border-bottom: none;
+	}
+
+	.bracket.bottom-left {
+		bottom: 20px;
+		left: 20px;
+		border-right: none;
+		border-top: none;
+	}
+
+	.bracket.bottom-right {
+		bottom: 20px;
+		right: 20px;
+		border-left: none;
+		border-top: none;
+	}
+
+	/* MODULE SELECTOR */
+	.module-selector {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		background: var(--blueprint-surface);
+		border-top: 2px solid var(--border-technical);
+		position: relative;
+		z-index: 10;
+	}
+
+	.module-tab {
+		display: flex;
+		flex-direction: column;
+		padding: var(--space-4) var(--space-5);
+		background: transparent;
+		border: none;
+		border-right: 1px solid var(--border-subtle);
+		cursor: pointer;
+		transition: all 0.2s;
+		position: relative;
+		color: var(--gray-400);
+	}
+
+	.module-tab:last-child {
 		border-right: none;
 	}
 
-	.tab:hover {
-		background: #0f172a;
-		color: #f1f5f9;
+	.tab-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: var(--space-2);
 	}
 
-	.tab.active {
-		background: #0f172a;
-		color: #3b82f6;
-		border-top: 3px solid #3b82f6;
-	}
-
-	.tab.completed {
-		color: #10b981;
-	}
-
-	.tab.completed.active {
-		color: #3b82f6;
-	}
-
-	.tab-icon {
-		font-size: 1.5rem;
-	}
-
-	.tab-label {
-		font-size: 0.75rem;
-		font-weight: 600;
-		text-transform: uppercase;
+	.tab-code {
+		font-family: var(--font-technical);
+		font-size: 0.625rem;
+		font-weight: 700;
 		letter-spacing: 0.05em;
 	}
 
 	.tab-status {
-		position: absolute;
-		top: 0.5rem;
-		right: 0.5rem;
-		font-size: 0.875rem;
+		width: 16px;
+		height: 16px;
+	}
+
+	.tab-status svg {
+		width: 100%;
+		height: 100%;
 	}
 
 	.tab-status.complete {
-		color: #10b981;
+		color: var(--green-success);
 	}
 
-	.tab-status.generating {
-		color: #3b82f6;
-		animation: pulse 1.5s infinite;
+	.tab-status.generating .spinner-small {
+		width: 14px;
+		height: 14px;
+		border: 2px solid var(--cyan-700);
+		border-top-color: var(--cyan-400);
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
 	}
 
-	@keyframes pulse {
-		0%, 100% {
-			opacity: 1;
-		}
-		50% {
-			opacity: 0.5;
-		}
+	.tab-status.pending {
+		color: var(--gray-600);
+	}
+
+	.tab-label {
+		font-size: 0.8125rem;
+		font-weight: 600;
+		letter-spacing: 0.03em;
+		text-transform: uppercase;
+		margin-bottom: var(--space-2);
+	}
+
+	.tab-indicator {
+		height: 3px;
+		background: transparent;
+		transition: all 0.3s;
+	}
+
+	.module-tab:hover {
+		background: var(--blueprint-bg-secondary);
+		color: var(--gray-200);
+	}
+
+	.module-tab.active {
+		background: var(--blueprint-bg);
+		color: var(--cyan-400);
+	}
+
+	.module-tab.active .tab-indicator {
+		background: linear-gradient(90deg, var(--cyan-600), var(--cyan-400));
+		box-shadow: 0 0 10px var(--cyan-glow);
+	}
+
+	.module-tab.complete:not(.active) {
+		color: var(--green-success);
+	}
+
+	.module-tab.generating {
+		color: var(--amber-warning);
 	}
 </style>
