@@ -210,6 +210,67 @@ class ApiService {
 			};
 		}
 	}
+
+	async editComponent(prompt: string, aircraft: any): Promise<{
+		success: boolean;
+		component?: string;
+		operation?: string;
+		description?: string;
+		model?: Model3D;
+		parameters?: AeroParameters;
+		error?: string;
+	}> {
+		try {
+			const response = await fetch(`${API_BASE}/generate/edit-component`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ prompt, aircraft })
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			const data = await response.json();
+
+			if (data.success && data.model) {
+				return {
+					success: true,
+					component: data.component,
+					operation: data.operation,
+					description: data.description,
+					model: mapBackendToFrontend(data.model),
+					parameters: {
+						wingType: data.parameters.wing_type ?? 'straight',
+						span: data.parameters.span ?? 1.0,
+						rootChord: data.parameters.root_chord ?? 1.0,
+						tipChord: data.parameters.tip_chord ?? data.parameters.root_chord ?? 1.0,
+						sweepAngle: data.parameters.sweep_angle ?? 0,
+						thickness: data.parameters.thickness ?? 12,
+						dihedral: data.parameters.dihedral ?? 0,
+						fuselageType: data.parameters.fuselage_type,
+						fuselageLength: data.parameters.fuselage_length,
+						fuselageDiameter: data.parameters.fuselage_diameter,
+						engineLength: data.parameters.engine_length,
+						engineDiameter: data.parameters.engine_diameter,
+						hasVerticalStabilizer: data.parameters.has_vertical_stabilizer ?? false,
+						hasHorizontalStabilizer: data.parameters.has_horizontal_stabilizer ?? false,
+						positionX: data.parameters.position_x ?? 0,
+						positionY: data.parameters.position_y ?? 0,
+						positionZ: data.parameters.position_z ?? 0
+					}
+				};
+			}
+
+			return data;
+		} catch (error) {
+			console.error('Error editing component:', error);
+			return {
+				success: false,
+				error: error instanceof Error ? error.message : 'Unknown error'
+			};
+		}
+	}
 }
 
 export const apiService = new ApiService();

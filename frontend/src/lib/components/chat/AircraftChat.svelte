@@ -14,6 +14,13 @@
 		'Make a C-130 cargo aircraft'
 	];
 
+	const editExamples = [
+		'Set wing span to 80 meters',
+		'Make the fuselage bigger',
+		'Increase wing sweep to 45 degrees',
+		'Change engine diameter to 3 meters'
+	];
+
 	function formatTimestamp(): string {
 		const now = new Date();
 		return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
@@ -31,6 +38,56 @@
 		isGenerating = true;
 
 		try {
+			// Check if any components exist (for edit mode)
+			const hasExistingComponents = $aircraft.wings.model || $aircraft.fuselage.model || $aircraft.engines.model;
+
+			// Keywords that suggest editing vs generation
+			const editKeywords = ['make', 'set', 'change', 'increase', 'decrease', 'rotate', 'move', 'bigger', 'smaller', 'adjust', 'modify'];
+			const lowerMessage = userMessage.toLowerCase();
+			const seemsLikeEdit = editKeywords.some(keyword => lowerMessage.includes(keyword));
+
+			// Try edit mode if components exist and prompt seems like an edit
+			if (hasExistingComponents && seemsLikeEdit) {
+				try {
+					const editResult = await apiService.editComponent(userMessage, $aircraft);
+
+					if (editResult.success && editResult.model) {
+						// Update the edited component
+						const componentType = editResult.component as 'wings' | 'fuselage' | 'engines';
+						setComponentModel(componentType, editResult.model);
+
+						// Add success message
+						chatHistory = [
+							...chatHistory,
+							{
+								role: 'assistant',
+								message: `✓ ${editResult.description || `Updated ${componentType}`}. Check the 3D preview to see the changes!`,
+								timestamp: formatTimestamp()
+							}
+						];
+						isGenerating = false;
+						return;
+					} else if (editResult.error && editResult.error.includes('not yet implemented')) {
+						// If operation not implemented, show friendly message
+						chatHistory = [
+							...chatHistory,
+							{
+								role: 'assistant',
+								message: `Note: ${editResult.error}`,
+								timestamp: formatTimestamp()
+							}
+						];
+						isGenerating = false;
+						return;
+					}
+					// If edit failed, fall through to generation mode
+				} catch (editError) {
+					console.log('Edit attempt failed, trying generation mode:', editError);
+					// Fall through to generation mode
+				}
+			}
+
+			// Generation mode (new aircraft or edit failed)
 			const response = await fetch('/api/generate/from-chat', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -155,15 +212,16 @@
 	<div class="chat-log">
 		<!-- Quick Commands (shown before first message) -->
 		{#if !hasStartedChat}
+			{@const hasComponents = $aircraft.wings.model || $aircraft.fuselage.model || $aircraft.engines.model}
 			<div class="quick-commands">
 				<div class="commands-header">
 					<svg viewBox="0 0 16 16" fill="none">
 						<path d="M2 8L8 2L14 8M8 3V14" stroke="currentColor" stroke-width="1.5"/>
 					</svg>
-					<span>QUICK COMMANDS</span>
+					<span>{hasComponents ? 'EDIT COMMANDS' : 'QUICK COMMANDS'}</span>
 				</div>
 				<div class="commands-grid">
-					{#each examples as example}
+					{#each (hasComponents ? editExamples : examples) as example}
 						<button class="command-btn" on:click={() => useExample(example)} disabled={isGenerating}>
 							<svg viewBox="0 0 16 16" fill="none" class="command-icon">
 								<path d="M4 8H12M12 8L9 5M12 8L9 11" stroke="currentColor" stroke-width="1.5"/>

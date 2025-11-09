@@ -360,4 +360,120 @@ Return JSON with this exact structure:
             }
 
 
+    async def parse_edit_command(self, prompt: str, current_aircraft: dict) -> dict:
+        """
+        Parse natural language edit commands to modify existing components.
+
+        Examples:
+        - "make the wings bigger" -> scale wings by 1.2
+        - "rotate the fuselage 45 degrees" -> rotate fuselage 45° on Y axis
+        - "move the engines forward" -> translate engines +2m on X axis
+        - "set wing span to 80 meters" -> update wing span parameter to 80
+
+        Args:
+            prompt: Natural language edit command
+            current_aircraft: Current aircraft data with component parameters
+
+        Returns:
+            Dict with edit instructions: {
+                "component": "wings"|"fuselage"|"engines",
+                "operation": "scale"|"rotate"|"translate"|"parameter",
+                "parameters": {...}
+            }
+        """
+        system_prompt = """You are an aerospace engineering assistant. Parse natural language commands to edit aircraft components.
+
+Your task: Interpret edit commands and return structured edit instructions.
+
+COMPONENT IDENTIFICATION:
+- "wings" / "wing" → component: "wings"
+- "fuselage" / "body" / "cabin" → component: "fuselage"
+- "engines" / "engine" / "nacelle" → component: "engines"
+
+OPERATION TYPES:
+
+1. SCALE (size changes):
+   - "make bigger", "increase size", "scale up" → scale: 1.2 (20% bigger)
+   - "make smaller", "decrease size", "scale down" → scale: 0.8 (20% smaller)
+   - "double the size" → scale: 2.0
+   - "half the size" → scale: 0.5
+
+2. ROTATE (orientation changes):
+   - "rotate X degrees" → rotation: X degrees
+   - "rotate clockwise/counterclockwise" → rotation: ±15 degrees
+   - Specify axis if mentioned, default to Y axis (yaw)
+
+3. TRANSLATE (position changes):
+   - "move forward" → translate_x: +2.0
+   - "move backward/back" → translate_x: -2.0
+   - "move up" → translate_y: +1.0
+   - "move down" → translate_y: -1.0
+   - "move left" → translate_z: -2.0
+   - "move right" → translate_z: +2.0
+
+4. PARAMETER (specific parameter changes):
+   - "set span to X meters" → parameter: "span", value: X
+   - "set chord to X" → parameter: "root_chord", value: X
+   - "change sweep angle to X" → parameter: "sweep_angle", value: X
+
+Return JSON with this exact structure:
+{
+  "component": "wings|fuselage|engines",
+  "operation": "scale|rotate|translate|parameter",
+  "parameters": {
+    // For scale:
+    "scale_factor": 1.2,
+    // For rotate:
+    "rotation_degrees": 45,
+    "rotation_axis": "x|y|z",
+    // For translate:
+    "translate_x": 2.0,
+    "translate_y": 0.0,
+    "translate_z": 0.0,
+    // For parameter:
+    "parameter_name": "span",
+    "parameter_value": 80
+  },
+  "description": "human-readable description of what will happen"
+}"""
+
+        # Include current component parameters for context
+        wings_params = current_aircraft.get('wings', {}).get('parameters', {})
+        fuselage_params = current_aircraft.get('fuselage', {}).get('parameters', {})
+        engines_params = current_aircraft.get('engines', {}).get('parameters', {})
+
+        user_prompt = f"""Parse this edit command: "{prompt}"
+
+Current aircraft state:
+WINGS: span={wings_params.get('span', 0)}m, root_chord={wings_params.get('root_chord', 0)}m, sweep={wings_params.get('sweep_angle', 0)}°
+FUSELAGE: length={fuselage_params.get('fuselage_length', 0)}m, diameter={fuselage_params.get('fuselage_diameter', 0)}m
+ENGINES: length={engines_params.get('engine_length', 0)}m, diameter={engines_params.get('engine_diameter', 0)}m
+
+Return the edit instruction as JSON."""
+
+        try:
+            response = self.client.chat.completions.create(
+                model=settings.openai_model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.2,
+                response_format={"type": "json_object"}
+            )
+
+            content = response.choices[0].message.content
+            if not content:
+                raise ValueError("Empty response from OpenAI for edit command")
+
+            edit_instruction = json.loads(content)
+            print(f"AI parsed edit command: {edit_instruction}")
+
+            return edit_instruction
+
+        except Exception as e:
+            print(f"Error parsing edit command: {e}")
+            raise
+
+
 ai_service = AIService()

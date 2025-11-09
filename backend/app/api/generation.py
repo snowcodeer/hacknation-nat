@@ -142,3 +142,116 @@ async def compile_aircraft(request: dict):
             success=False,
             error=str(e)
         )
+
+
+@router.post("/edit-component")
+async def edit_component(request: dict):
+    """
+    Edit a component using natural language commands.
+    Supports: size changes, rotation, position, and parameter updates.
+
+    Example prompts:
+    - "make the wings bigger"
+    - "rotate the fuselage 45 degrees"
+    - "move the engines forward"
+    - "set wing span to 80 meters"
+    """
+    try:
+        prompt = request.get('prompt')
+        aircraft_data = request.get('aircraft', {})
+
+        if not prompt:
+            return {
+                "success": False,
+                "error": "No edit prompt provided"
+            }
+
+        # Use AI to parse the edit command
+        edit_instruction = await ai_service.parse_edit_command(prompt, aircraft_data)
+
+        component_type = edit_instruction.get('component')
+        operation = edit_instruction.get('operation')
+        parameters = edit_instruction.get('parameters', {})
+        description = edit_instruction.get('description', '')
+
+        print(f"[EDIT] Component: {component_type}, Operation: {operation}")
+        print(f"[EDIT] Description: {description}")
+
+        # Get the current component
+        component = aircraft_data.get(component_type)
+        if not component or not component.get('model'):
+            return {
+                "success": False,
+                "error": f"Component '{component_type}' not found or not generated yet"
+            }
+
+        # Apply the edit based on operation type
+        if operation == "parameter":
+            # Regenerate component with updated parameter
+            param_name = parameters.get('parameter_name')
+            param_value = parameters.get('parameter_value')
+
+            # Get current parameters and update the specified one
+            current_params = component.get('parameters', {})
+
+            # Convert to AeroParameters format
+            from app.models import AeroParameters
+            params_dict = dict(current_params)
+
+            # Map parameter names to AeroParameters field names
+            param_mapping = {
+                'span': 'span',
+                'root_chord': 'root_chord',
+                'tip_chord': 'tip_chord',
+                'sweep_angle': 'sweep_angle',
+                'sweep': 'sweep_angle',
+                'thickness': 'thickness',
+                'dihedral': 'dihedral',
+                'fuselage_length': 'fuselage_length',
+                'fuselage_diameter': 'fuselage_diameter',
+                'engine_length': 'engine_length',
+                'engine_diameter': 'engine_diameter'
+            }
+
+            actual_param_name = param_mapping.get(param_name, param_name)
+            params_dict[actual_param_name] = param_value
+
+            # Regenerate the model with updated parameters
+            updated_params = AeroParameters(**params_dict)
+            updated_model = geometry_service.create_model_from_parameters(
+                params=updated_params,
+                source_prompt=f"Edited via chat: {prompt}",
+                generated_from="edit"
+            )
+
+            return {
+                "success": True,
+                "component": component_type,
+                "operation": operation,
+                "description": description,
+                "model": updated_model,
+                "parameters": updated_params
+            }
+
+        elif operation in ["scale", "rotate", "translate"]:
+            # For geometric transformations, we need to modify the geometry
+            # This is more complex as we need to transform the vertices
+            return {
+                "success": False,
+                "error": f"Operation '{operation}' not yet implemented. Use parameter changes for now (e.g., 'set wing span to X meters')"
+            }
+
+        else:
+            return {
+                "success": False,
+                "error": f"Unknown operation: {operation}"
+            }
+
+    except Exception as e:
+        print(f"Error editing component: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            "success": False,
+            "error": str(e)
+        }
