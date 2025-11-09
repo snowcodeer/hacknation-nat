@@ -5,7 +5,7 @@ from typing import List
 class Settings(BaseSettings):
     # OpenAI
     openai_api_key: str
-    openai_model: str = "gpt-4"
+    openai_model: str = "gpt-4.1"
 
     # Server
     host: str = "0.0.0.0"

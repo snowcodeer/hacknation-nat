@@ -43,7 +43,7 @@ class ModelMetadata(BaseModel):
     """Model metadata"""
     created_at: datetime
     updated_at: datetime
-    generated_from: Literal['text', 'image', 'manual']
+    generated_from: Literal['text', 'image', 'manual', 'compilation']
     source_prompt: Optional[str] = None
 
 

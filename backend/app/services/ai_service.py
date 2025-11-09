@@ -34,13 +34,14 @@ For WINGS:
 - engine_diameter: null
 
 For FUSELAGE (body/cabin of aircraft):
-- wing_type: "straight"
-- span: 0.8 (use small value)
-- root_chord: same as fuselage_length (for proper alignment)
-- tip_chord: root_chord (cylindrical) or 70% of root_chord (tapered)
-- sweep_angle: 0
-- thickness: 80-100 (fuselage is thick/cylindrical)
-- dihedral: 0
+CRITICAL - ALL these fields are REQUIRED:
+- wing_type: "straight" (REQUIRED)
+- span: 0.8 (REQUIRED - use small value)
+- root_chord: same as fuselage_length (REQUIRED for proper alignment)
+- tip_chord: root_chord (REQUIRED - cylindrical) or 70% of root_chord (tapered)
+- sweep_angle: 0 (REQUIRED)
+- thickness: 80-100 (REQUIRED - fuselage is thick/cylindrical)
+- dihedral: 0 (REQUIRED)
 - fuselage_type: Determine from prompt keywords:
   * "commercial" / "airliner" / "passenger" / "Boeing" / "Airbus" → "commercial"
   * "fighter" / "jet fighter" / "F-22" / "F-16" / "military" → "fighter"
@@ -57,12 +58,14 @@ For FUSELAGE (body/cabin of aircraft):
 - engine_diameter: null
 
 For TAIL ASSEMBLY (stabilizers at rear):
-- wing_type: "swept"
-- span: 4-6m (proportional to wing size, about 50-60% of main wing span)
-- root_chord: 1.5-2.5m (proportional to wing chord)
-- tip_chord: 0.8-1.5m
-- sweep_angle: 20-30
-- thickness: 10-12
+CRITICAL - ALL these fields are REQUIRED:
+- wing_type: "swept" (REQUIRED)
+- span: 4-6m (REQUIRED - proportional to wing size, about 50-60% of main wing span)
+- root_chord: 1.5-2.5m (REQUIRED - proportional to wing chord)
+- tip_chord: 0.8-1.5m (REQUIRED)
+- sweep_angle: 20-30 (REQUIRED)
+- thickness: 10-12 (REQUIRED)
+- dihedral: 0 (REQUIRED)
 - has_vertical_stabilizer: true
 - has_horizontal_stabilizer: true
 - fuselage_length: null
@@ -71,11 +74,14 @@ For TAIL ASSEMBLY (stabilizers at rear):
 - engine_diameter: null
 
 For ENGINES (turbine/nacelle):
-- wing_type: "straight"
-- span: 0.6
-- root_chord: same as engine_length (for alignment)
-- tip_chord: same as engine_length
-- thickness: 90
+CRITICAL - ALL these fields are REQUIRED:
+- wing_type: "straight" (REQUIRED)
+- span: 0.6 (REQUIRED)
+- root_chord: same as engine_length (REQUIRED for alignment)
+- tip_chord: same as engine_length (REQUIRED)
+- sweep_angle: 0 (REQUIRED)
+- thickness: 90 (REQUIRED)
+- dihedral: 0 (REQUIRED)
 - fuselage_length: null
 - fuselage_diameter: null
 - engine_length: actual length (typically 1.5-2.5m for realistic jet engine)
@@ -134,24 +140,43 @@ You must return parameters for ALL 4 components: wings, fuselage, tail_assembly,
 For each component, use the appropriate parameter structure:
 
 WINGS:
-- wing_type, span, root_chord, tip_chord, sweep_angle, thickness, dihedral
+REQUIRED fields: wing_type, span, root_chord, tip_chord, sweep_angle, thickness, dihedral
 - has_vertical_stabilizer: false, has_horizontal_stabilizer: false
 - All fuselage/engine fields: null
 
 FUSELAGE:
-- wing_type: "straight", span: 0.8, thickness: 80-100
+REQUIRED fields: wing_type, span, root_chord, tip_chord, sweep_angle, thickness, dihedral
+- wing_type: "straight"
+- span: 0.8
+- root_chord: same as fuselage_length
+- tip_chord: same as root_chord
+- sweep_angle: 0
+- thickness: 80-100
+- dihedral: 0
 - fuselage_type: "commercial"/"fighter"/"cargo"/"private"
-- fuselage_length, fuselage_diameter
+- fuselage_length, fuselage_diameter (realistic values)
 - All engine fields: null
 
 TAIL_ASSEMBLY:
-- wing_type: "swept", span, root_chord, tip_chord, sweep_angle, thickness
+REQUIRED fields: wing_type, span, root_chord, tip_chord, sweep_angle, thickness, dihedral
+- wing_type: "swept"
+- span, root_chord, tip_chord (proportional to main wing)
+- sweep_angle: 20-30
+- thickness: 10-12
+- dihedral: 0
 - has_vertical_stabilizer: true, has_horizontal_stabilizer: true
 - All fuselage/engine fields: null
 
 ENGINES:
-- wing_type: "straight", span: 0.6, thickness: 90
-- engine_length, engine_diameter
+REQUIRED fields: wing_type, span, root_chord, tip_chord, sweep_angle, thickness, dihedral
+- wing_type: "straight"
+- span: 0.6
+- root_chord: same as engine_length
+- tip_chord: same as engine_length
+- sweep_angle: 0
+- thickness: 90
+- dihedral: 0
+- engine_length, engine_diameter (realistic jet engine dimensions)
 - All fuselage fields: null
 
 Return as JSON with this structure:
