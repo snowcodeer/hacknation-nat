@@ -132,16 +132,16 @@
 			{#if viewMode === 'edit'}
 				<!-- Component Header with Technical Details -->
 				<div class="panel-header">
-					<div class="header-top">
-						<span class="component-code">{componentCodes[$activeComponent]}</span>
+					<div class="header-row">
+						<div class="header-left">
+							<span class="component-code">{componentCodes[$activeComponent]}</span>
+							<h2 class="component-title">{componentLabels[$activeComponent]}</h2>
+						</div>
 						<div class="status-indicator" class:complete={$completionStatus[$activeComponent]}>
 							<div class="indicator-dot"></div>
 							<span>{$completionStatus[$activeComponent] ? 'READY' : 'CONFIG'}</span>
 						</div>
 					</div>
-					<h2 class="component-title">{componentLabels[$activeComponent]}</h2>
-					<div class="header-divider"></div>
-					<p class="component-desc">PARAMETRIC CONFIGURATION</p>
 				</div>
 
 				<!-- Parameter Controls -->
@@ -151,16 +151,16 @@
 			{:else}
 				<!-- Assembly View -->
 				<div class="panel-header">
-					<div class="header-top">
-						<span class="component-code">ASM-MAIN</span>
+					<div class="header-row">
+						<div class="header-left">
+							<span class="component-code">ASM-MAIN</span>
+							<h2 class="component-title">Final Assembly</h2>
+						</div>
 						<div class="status-indicator complete">
 							<div class="indicator-dot"></div>
 							<span>ASSEMBLY</span>
 						</div>
 					</div>
-					<h2 class="component-title">Final Assembly</h2>
-					<div class="header-divider"></div>
-					<p class="component-desc">AIRCRAFT COMPILATION</p>
 				</div>
 
 				<div class="panel-content">
@@ -529,43 +529,59 @@
 	}
 
 	.panel-header {
-		padding: var(--space-5);
+		padding: var(--space-3) var(--space-4);
 		border-bottom: 1px solid var(--border-technical);
 		background: var(--blueprint-surface);
 		flex-shrink: 0;
 	}
 
-	.header-top {
+	.header-row {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		margin-bottom: var(--space-3);
+	}
+
+	.header-left {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
 	}
 
 	.component-code {
 		font-family: var(--font-technical);
-		font-size: 0.625rem;
+		font-size: 0.5625rem;
 		font-weight: 700;
-		letter-spacing: 0.15em;
+		letter-spacing: 0.1em;
 		color: var(--cyan-400);
-		padding: var(--space-1) var(--space-3);
+		padding: var(--space-1) var(--space-2);
 		background: var(--blueprint-bg);
 		border: 1px solid var(--border-technical);
+		flex-shrink: 0;
+	}
+
+	.component-title {
+		font-size: 0.875rem;
+		font-weight: 700;
+		color: var(--gray-100);
+		margin: 0;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
 	}
 
 	.status-indicator {
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
-		font-size: 0.625rem;
+		font-size: 0.5625rem;
 		font-weight: 700;
 		letter-spacing: 0.1em;
 		color: var(--gray-400);
+		flex-shrink: 0;
 	}
 
 	.indicator-dot {
-		width: 8px;
-		height: 8px;
+		width: 6px;
+		height: 6px;
 		border-radius: 50%;
 		background: var(--gray-500);
 		border: 1px solid var(--gray-400);
@@ -575,7 +591,7 @@
 	.status-indicator.complete .indicator-dot {
 		background: var(--green-success);
 		border-color: var(--green-success);
-		box-shadow: 0 0 10px var(--green-glow);
+		box-shadow: 0 0 8px var(--green-glow);
 	}
 
 	.status-indicator.complete {
@@ -585,29 +601,6 @@
 	@keyframes pulse-subtle {
 		0%, 100% { opacity: 1; }
 		50% { opacity: 0.6; }
-	}
-
-	.component-title {
-		font-size: 1.25rem;
-		font-weight: 700;
-		color: var(--gray-100);
-		margin: 0;
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-	}
-
-	.header-divider {
-		height: 1px;
-		background: linear-gradient(90deg, var(--cyan-600), transparent);
-		margin: var(--space-4) 0;
-	}
-
-	.component-desc {
-		font-size: 0.6875rem;
-		font-weight: 600;
-		letter-spacing: 0.1em;
-		color: var(--gray-400);
-		margin: 0;
 	}
 
 	.panel-content {
