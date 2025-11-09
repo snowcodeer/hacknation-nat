@@ -41,10 +41,18 @@ For FUSELAGE (body/cabin of aircraft):
 - sweep_angle: 0
 - thickness: 80-100 (fuselage is thick/cylindrical)
 - dihedral: 0
+- fuselage_type: Determine from prompt keywords:
+  * "commercial" / "airliner" / "passenger" / "Boeing" / "Airbus" → "commercial"
+  * "fighter" / "jet fighter" / "F-22" / "F-16" / "military" → "fighter"
+  * "cargo" / "transport" / "freight" / "C-130" → "cargo"
+  * "private" / "business jet" / "Cessna" / "small" → "private"
+  * Default: "commercial"
 - fuselage_length: actual length from prompt (e.g., 5m → 5m) - realistic dimensions!
 - fuselage_diameter: realistic diameter based on type:
-  * Cylindrical/wide body: 1.0-1.2m
-  * Streamlined/tapered: 0.6-0.8m
+  * Commercial: 1.0-1.2m
+  * Fighter: 0.5-0.7m (narrow, sleek)
+  * Cargo: 1.2-1.5m (wide)
+  * Private: 0.6-0.8m (medium)
 - engine_length: null
 - engine_diameter: null
 

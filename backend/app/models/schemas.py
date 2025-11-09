@@ -15,6 +15,7 @@ class AeroParameters(BaseModel):
     dihedral: float = Field(ge=-45, le=45, description="Dihedral angle in degrees")
 
     # Fuselage-specific parameters (ONLY for fuselage component)
+    fuselage_type: Optional[Literal['commercial', 'fighter', 'cargo', 'private']] = 'commercial'
     fuselage_length: Optional[float] = None
     fuselage_diameter: Optional[float] = None
 
@@ -24,6 +25,11 @@ class AeroParameters(BaseModel):
 
     has_vertical_stabilizer: bool = False
     has_horizontal_stabilizer: bool = False
+
+    # Component positioning (for assembly view)
+    position_x: Optional[float] = 0.0  # Forward/back position offset
+    position_y: Optional[float] = 0.0  # Up/down position offset
+    position_z: Optional[float] = 0.0  # Left/right position offset
 
 
 class GeometryData(BaseModel):

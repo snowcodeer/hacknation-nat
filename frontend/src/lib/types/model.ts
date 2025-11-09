@@ -9,6 +9,7 @@ export interface AeroParameters {
 	dihedral: number;       // degrees
 
 	// Fuselage parameters (ONLY for fuselage component)
+	fuselageType?: 'commercial' | 'fighter' | 'cargo' | 'private';
 	fuselageLength?: number;
 	fuselageDiameter?: number;
 
@@ -19,6 +20,11 @@ export interface AeroParameters {
 	// Other components
 	hasVerticalStabilizer: boolean;
 	hasHorizontalStabilizer: boolean;
+
+	// Component positioning (for assembly view)
+	positionX?: number;  // Forward/back position offset
+	positionY?: number;  // Up/down position offset
+	positionZ?: number;  // Left/right position offset
 }
 
 export interface Model3D {

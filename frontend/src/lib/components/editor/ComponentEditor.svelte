@@ -22,8 +22,8 @@
 		wings: {
 			wingType: 'delta',
 			span: 10,  // Realistic wing span (not 2x scaled)
-			rootChord: 3,  // Realistic chord
-			tipChord: 1,
+			rootChord: 4,  // Wider wing chord
+			tipChord: 1.5,
 			sweepAngle: 30,
 			thickness: 12,
 			dihedral: 0,
@@ -32,7 +32,10 @@
 			engineLength: null,
 			engineDiameter: null,
 			hasVerticalStabilizer: false,
-			hasHorizontalStabilizer: false
+			hasHorizontalStabilizer: false,
+			positionX: 0,
+			positionY: 0.5,
+			positionZ: 0
 		},
 		fuselage: {
 			wingType: 'straight',
@@ -42,12 +45,16 @@
 			sweepAngle: 0,
 			thickness: 90,
 			dihedral: 0,
+			fuselageType: 'commercial',
 			fuselageLength: 5,  // Realistic fuselage length (not 2x scaled)
 			fuselageDiameter: 0.7,  // Realistic diameter (not 2x scaled)
 			engineLength: null,
 			engineDiameter: null,
 			hasVerticalStabilizer: false,
-			hasHorizontalStabilizer: false
+			hasHorizontalStabilizer: false,
+			positionX: 0,
+			positionY: 0.5,
+			positionZ: 0
 		},
 		tail_assembly: {
 			wingType: 'swept',
@@ -62,7 +69,10 @@
 			engineLength: null,
 			engineDiameter: null,
 			hasVerticalStabilizer: true,
-			hasHorizontalStabilizer: true
+			hasHorizontalStabilizer: true,
+			positionX: -2.5,
+			positionY: 0.5,
+			positionZ: 0
 		},
 		engines: {
 			wingType: 'straight',
@@ -77,7 +87,10 @@
 			engineLength: 2.0,  // MODULAR: Engines use their own parameters
 			engineDiameter: 0.5,
 			hasVerticalStabilizer: false,
-			hasHorizontalStabilizer: false
+			hasHorizontalStabilizer: false,
+			positionX: 0,
+			positionY: 0,
+			positionZ: 3
 		}
 	};
 
@@ -327,6 +340,20 @@
 
 			{#if componentType === 'fuselage'}
 				<div class="param-group">
+					<label>
+						Fuselage Type
+						<select
+							bind:value={parameters.fuselageType}
+							on:change={handleUpdateParameters}
+							disabled={isGenerating}
+						>
+							<option value="commercial">Commercial</option>
+							<option value="fighter">Fighter Jet</option>
+							<option value="cargo">Cargo</option>
+							<option value="private">Private</option>
+						</select>
+					</label>
+
 					<label>
 						Length: {(parameters.fuselageLength || 0).toFixed(1)}m
 						<input

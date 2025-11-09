@@ -15,12 +15,16 @@ function mapBackendToFrontend(backendData: any): Model3D {
 			sweepAngle: backendData.parameters.sweep_angle,
 			thickness: backendData.parameters.thickness,
 			dihedral: backendData.parameters.dihedral,
+			fuselageType: backendData.parameters.fuselage_type,
 			fuselageLength: backendData.parameters.fuselage_length,
 			fuselageDiameter: backendData.parameters.fuselage_diameter,
 			engineLength: backendData.parameters.engine_length,
 			engineDiameter: backendData.parameters.engine_diameter,
 			hasVerticalStabilizer: backendData.parameters.has_vertical_stabilizer,
-			hasHorizontalStabilizer: backendData.parameters.has_horizontal_stabilizer
+			hasHorizontalStabilizer: backendData.parameters.has_horizontal_stabilizer,
+			positionX: backendData.parameters.position_x,
+			positionY: backendData.parameters.position_y,
+			positionZ: backendData.parameters.position_z
 		},
 		geometry: {
 			// Convert arrays to Typed Arrays
@@ -54,12 +58,16 @@ function mapFrontendToBackend(parameters: AeroParameters): any {
 		sweep_angle: parameters.sweepAngle,
 		thickness: parameters.thickness,
 		dihedral: parameters.dihedral,
+		fuselage_type: parameters.fuselageType,
 		fuselage_length: parameters.fuselageLength,
 		fuselage_diameter: parameters.fuselageDiameter,
 		engine_length: parameters.engineLength,
 		engine_diameter: parameters.engineDiameter,
 		has_vertical_stabilizer: parameters.hasVerticalStabilizer,
-		has_horizontal_stabilizer: parameters.hasHorizontalStabilizer
+		has_horizontal_stabilizer: parameters.hasHorizontalStabilizer,
+		position_x: parameters.positionX || 0,
+		position_y: parameters.positionY || 0,
+		position_z: parameters.positionZ || 0
 	};
 }
 

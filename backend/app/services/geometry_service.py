@@ -170,14 +170,15 @@ class GeometryService:
 
     def generate_fuselage_mesh(self, params: AeroParameters) -> trimesh.Trimesh:
         """
-        Generate a 3D cylindrical or tapered fuselage mesh using MODULAR fuselage parameters.
-        Creates a realistic fuselage body with realistic dimensions.
+        Generate a 3D fuselage mesh using MODULAR fuselage parameters.
+        Supports different fuselage types: commercial, fighter, cargo, private.
         """
         # Use MODULAR FUSELAGE PARAMETERS - fuselages have their own fields
         length = params.fuselage_length or params.root_chord or 5.0  # Default 5m if not specified
         diameter = params.fuselage_diameter or 0.8  # Default 0.8m if not specified
+        fuselage_type = params.fuselage_type or 'commercial'
 
-        # Create a cylindrical fuselage with nose cone and tail cone
+        # Create a fuselage with type-specific shape
         num_segments = 32  # Circular resolution
         num_length_segments = 30  # Length resolution
 
@@ -189,13 +190,42 @@ class GeometryService:
             t = i / num_length_segments  # 0 (nose) to 1 (tail)
             x = (t - 0.5) * length  # Center at origin
 
-            # Variable radius along length (nose cone, main body, tail cone)
-            if t < 0.15:  # Nose cone
-                radius = diameter / 2 * (t / 0.15) ** 0.5
-            elif t > 0.85:  # Tail cone
-                radius = diameter / 2 * ((1 - t) / 0.15) ** 0.7
-            else:  # Main cylindrical body
-                radius = diameter / 2
+            # Type-specific radius calculation
+            if fuselage_type == 'fighter':
+                # Fighter jet: very sharp nose, sleek body, tapered tail
+                if t < 0.2:  # Sharp nose
+                    radius = diameter / 2 * (t / 0.2) ** 1.5
+                elif t > 0.8:  # Tapered tail
+                    radius = diameter / 2 * ((1 - t) / 0.2) ** 1.2
+                else:  # Streamlined body
+                    radius = diameter / 2 * (1 - 0.1 * abs(0.5 - t))  # Slightly narrower in middle
+
+            elif fuselage_type == 'cargo':
+                # Cargo: boxy, wide, minimal taper
+                if t < 0.1:  # Short nose
+                    radius = diameter / 2 * (t / 0.1) ** 0.3
+                elif t > 0.9:  # Short tail
+                    radius = diameter / 2 * ((1 - t) / 0.1) ** 0.3
+                else:  # Wide boxy body
+                    radius = diameter / 2
+
+            elif fuselage_type == 'private':
+                # Private: sleek, streamlined, medium taper
+                if t < 0.12:  # Smooth nose
+                    radius = diameter / 2 * (t / 0.12) ** 0.6
+                elif t > 0.88:  # Smooth tail
+                    radius = diameter / 2 * ((1 - t) / 0.12) ** 0.8
+                else:  # Streamlined body
+                    radius = diameter / 2
+
+            else:  # commercial (default)
+                # Commercial: cylindrical with gentle nose and tail cones
+                if t < 0.15:  # Nose cone
+                    radius = diameter / 2 * (t / 0.15) ** 0.5
+                elif t > 0.85:  # Tail cone
+                    radius = diameter / 2 * ((1 - t) / 0.15) ** 0.7
+                else:  # Main cylindrical body
+                    radius = diameter / 2
 
             # Create circular cross-section
             for j in range(num_segments):
