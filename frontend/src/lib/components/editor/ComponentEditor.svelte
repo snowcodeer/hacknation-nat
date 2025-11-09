@@ -21,8 +21,8 @@
 	const defaultParams: Record<CT, AeroParameters> = {
 		wings: {
 			wingType: 'delta',
-			span: 10,  // Realistic wing span (not 2x scaled)
-			rootChord: 4,  // Wider wing chord
+			span: 10,
+			rootChord: 4,
 			tipChord: 1.5,
 			sweepAngle: 30,
 			thickness: 12,
@@ -40,14 +40,14 @@
 		fuselage: {
 			wingType: 'straight',
 			span: 0.8,
-			rootChord: 5,  // Matches fuselage length
+			rootChord: 5,
 			tipChord: 3.5,
 			sweepAngle: 0,
 			thickness: 90,
 			dihedral: 0,
 			fuselageType: 'commercial',
-			fuselageLength: 5,  // Realistic fuselage length (not 2x scaled)
-			fuselageDiameter: 0.7,  // Realistic diameter (not 2x scaled)
+			fuselageLength: 5,
+			fuselageDiameter: 0.7,
 			engineLength: null,
 			engineDiameter: null,
 			hasVerticalStabilizer: false,
@@ -58,7 +58,7 @@
 		},
 		tail_assembly: {
 			wingType: 'swept',
-			span: 5,  // Realistic tail span (not 2x scaled)
+			span: 5,
 			rootChord: 2,
 			tipChord: 1,
 			sweepAngle: 25,
@@ -77,14 +77,14 @@
 		engines: {
 			wingType: 'straight',
 			span: 0.6,
-			rootChord: 2,  // Matches engine length
+			rootChord: 2,
 			tipChord: 2,
 			sweepAngle: 0,
 			thickness: 90,
 			dihedral: 0,
-			fuselageLength: null,  // MODULAR: Engines don't use fuselage parameters
+			fuselageLength: null,
 			fuselageDiameter: null,
-			engineLength: 2.0,  // MODULAR: Engines use their own parameters
+			engineLength: 2.0,
 			engineDiameter: 0.5,
 			hasVerticalStabilizer: false,
 			hasHorizontalStabilizer: false,
@@ -137,51 +137,6 @@
 		}
 	}
 
-	const componentPrompts: Record<CT, string[]> = {
-		wings: [
-			'Delta wing with 45° sweep, 10m span, 3m root chord',
-			'Straight wing, 12m span, 2.5m chord, rectangular',
-			'Swept wing with 30° sweep, 11m span, 2m root chord'
-		],
-		fuselage: [
-			'Cylindrical fuselage, 5m length, 1.2m diameter',
-			'Tapered fuselage, 6m length, streamlined',
-			'Wide body fuselage, 8m length, 2m diameter'
-		],
-		tail_assembly: [
-			'Swept tail assembly, 5m span with vertical stabilizer',
-			'T-tail configuration, 4.5m horizontal span',
-			'Conventional tail with rudder and elevator, 5.5m span'
-		],
-		engines: [
-			'Twin jet engines, 1.5m length, 0.8m diameter each',
-			'Single turboprop engine, 2m length, 1m diameter',
-			'Four turbofan engines, 1.2m length each'
-		]
-	};
-
-	async function handleGenerate() {
-		if (!prompt.trim()) return;
-
-		console.log('Generating component:', componentType, 'with prompt:', prompt);
-		setComponentGenerating(componentType, true);
-
-		// Prepend component type to prompt for better AI understanding
-		const componentName = componentType.replace('_', ' ');
-		const enhancedPrompt = `Generate aircraft ${componentName}: ${prompt}`;
-
-		const response = await apiService.generateFromText(enhancedPrompt);
-
-		if (response.success && response.model) {
-			console.log('Generated successfully:', response.model.name);
-			setComponentModel(componentType, response.model);
-			showSliders = true; // Show sliders after generation
-		} else {
-			console.error('Generation failed:', response.error);
-			setComponentError(componentType, response.error || 'Failed to generate');
-		}
-	}
-
 	async function handleUpdateParameters() {
 		console.log('Updating parameters:', parameters);
 		setComponentGenerating(componentType, true);
@@ -196,72 +151,124 @@
 			setComponentError(componentType, response.error || 'Failed to update');
 		}
 	}
-
-	function useExample(example: string) {
-		prompt = example;
-	}
-
-	function toggleSliders() {
-		showSliders = !showSliders;
-	}
 </script>
 
 <div class="component-editor">
 	{#if error}
-		<div class="error-message">
-			{error}
+		<div class="error-panel">
+			<svg viewBox="0 0 16 16" fill="none">
+				<circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/>
+				<path d="M8 4V8M8 10.5V11" stroke="currentColor" stroke-width="2" stroke-linecap="square"/>
+			</svg>
+			<div class="error-content">
+				<span class="error-label">ERROR</span>
+				<p>{error}</p>
+			</div>
 		</div>
 	{/if}
 
 	{#if isGenerating}
-		<div class="loading-section">
-			<p>Generating {componentType.replace('_', ' ')}...</p>
+		<div class="generating-panel">
+			<div class="generating-spinner"></div>
+			<div class="generating-content">
+				<span class="generating-label">PROCESSING</span>
+				<p>Generating {componentType.replace('_', ' ')}...</p>
+			</div>
 		</div>
 	{/if}
 
-	<div class="sliders-section">
-		<h3>Fine-tune Parameters</h3>
+	<!-- Parameter Controls -->
+	<div class="controls-section">
+		<div class="section-title">
+			<svg viewBox="0 0 16 16" fill="none">
+				<rect x="2" y="6" width="4" height="8" stroke="currentColor" stroke-width="1.5"/>
+				<rect x="7" y="2" width="4" height="12" stroke="currentColor" stroke-width="1.5"/>
+				<rect x="12" y="4" width="4" height="10" stroke="currentColor" stroke-width="1.5"/>
+			</svg>
+			<span>PARAMETER CONTROLS</span>
+		</div>
 
 		{#if componentType === 'wings' || componentType === 'tail_assembly'}
-				<div class="param-group">
-					<label>
-						Wing Type
-						<select bind:value={parameters.wingType} on:change={handleUpdateParameters} disabled={isGenerating}>
-							<option value="delta">Delta</option>
-							<option value="swept">Swept</option>
-							<option value="straight">Straight</option>
-							<option value="tapered">Tapered</option>
-						</select>
-					</label>
+			<!-- Wing Configuration -->
+			<div class="control-group">
+				<div class="group-label">WING CONFIGURATION</div>
 
-					<label>
-						Span: {parameters.span.toFixed(1)}m
+				<div class="param-control">
+					<div class="param-header">
+						<label class="param-label">TYPE</label>
+						<span class="param-code">WT-01</span>
+					</div>
+					<select bind:value={parameters.wingType} on:change={handleUpdateParameters} disabled={isGenerating} class="param-select">
+						<option value="delta">DELTA</option>
+						<option value="swept">SWEPT</option>
+						<option value="straight">STRAIGHT</option>
+						<option value="tapered">TAPERED</option>
+					</select>
+				</div>
+
+				<div class="param-control">
+					<div class="param-header">
+						<label class="param-label">SPAN</label>
+						<div class="param-value-display">
+							<span class="value">{parameters.span.toFixed(2)}</span>
+							<span class="unit">m</span>
+						</div>
+					</div>
+					<div class="param-slider-container">
 						<input
 							type="range"
 							min="5"
 							max="15"
-							step="0.5"
+							step="0.1"
 							bind:value={parameters.span}
 							on:change={handleUpdateParameters}
 							disabled={isGenerating}
+							class="param-slider"
 						/>
-					</label>
+						<div class="slider-marks">
+							<span class="mark">5.0</span>
+							<span class="mark">10.0</span>
+							<span class="mark">15.0</span>
+						</div>
+					</div>
+				</div>
 
-					<label>
-						Root Chord: {parameters.rootChord.toFixed(1)}m
+				<div class="param-control">
+					<div class="param-header">
+						<label class="param-label">ROOT CHORD</label>
+						<div class="param-value-display">
+							<span class="value">{parameters.rootChord.toFixed(2)}</span>
+							<span class="unit">m</span>
+						</div>
+					</div>
+					<div class="param-slider-container">
 						<input
 							type="range"
 							min="1"
 							max="5"
-							step="0.2"
+							step="0.1"
 							bind:value={parameters.rootChord}
 							on:change={handleUpdateParameters}
 							disabled={isGenerating}
+							class="param-slider"
 						/>
-					</label>
+						<div class="slider-marks">
+							<span class="mark">1.0</span>
+							<span class="mark">3.0</span>
+							<span class="mark">5.0</span>
+						</div>
+					</div>
+				</div>
 
-					<label>
-						Tip Chord: {(parameters.tipChord || 0).toFixed(1)}m
+				<div class="param-control">
+					<div class="param-header">
+						<label class="param-label">TIP CHORD</label>
+						<div class="param-value-display">
+							<span class="value">{(parameters.tipChord || 0).toFixed(2)}</span>
+							<span class="unit">m</span>
+						</div>
+					</div>
+					<div class="param-slider-container">
 						<input
 							type="range"
 							min="0.1"
@@ -270,11 +277,25 @@
 							bind:value={parameters.tipChord}
 							on:change={handleUpdateParameters}
 							disabled={isGenerating}
+							class="param-slider"
 						/>
-					</label>
+						<div class="slider-marks">
+							<span class="mark">0.1</span>
+							<span class="mark">1.5</span>
+							<span class="mark">3.0</span>
+						</div>
+					</div>
+				</div>
 
-					<label>
-						Sweep Angle: {parameters.sweepAngle.toFixed(0)}°
+				<div class="param-control">
+					<div class="param-header">
+						<label class="param-label">SWEEP ANGLE</label>
+						<div class="param-value-display">
+							<span class="value">{parameters.sweepAngle.toFixed(0)}</span>
+							<span class="unit">deg</span>
+						</div>
+					</div>
+					<div class="param-slider-container">
 						<input
 							type="range"
 							min="0"
@@ -283,11 +304,25 @@
 							bind:value={parameters.sweepAngle}
 							on:change={handleUpdateParameters}
 							disabled={isGenerating}
+							class="param-slider"
 						/>
-					</label>
+						<div class="slider-marks">
+							<span class="mark">0</span>
+							<span class="mark">45</span>
+							<span class="mark">90</span>
+						</div>
+					</div>
+				</div>
 
-					<label>
-						Thickness: {parameters.thickness.toFixed(0)}%
+				<div class="param-control">
+					<div class="param-header">
+						<label class="param-label">THICKNESS</label>
+						<div class="param-value-display">
+							<span class="value">{parameters.thickness.toFixed(0)}</span>
+							<span class="unit">%</span>
+						</div>
+					</div>
+					<div class="param-slider-container">
 						<input
 							type="range"
 							min="8"
@@ -296,11 +331,25 @@
 							bind:value={parameters.thickness}
 							on:change={handleUpdateParameters}
 							disabled={isGenerating}
+							class="param-slider"
 						/>
-					</label>
+						<div class="slider-marks">
+							<span class="mark">8</span>
+							<span class="mark">14</span>
+							<span class="mark">20</span>
+						</div>
+					</div>
+				</div>
 
-					<label>
-						Dihedral: {parameters.dihedral.toFixed(0)}°
+				<div class="param-control">
+					<div class="param-header">
+						<label class="param-label">DIHEDRAL</label>
+						<div class="param-value-display">
+							<span class="value">{parameters.dihedral.toFixed(0)}</span>
+							<span class="unit">deg</span>
+						</div>
+					</div>
+					<div class="param-slider-container">
 						<input
 							type="range"
 							min="-15"
@@ -309,53 +358,85 @@
 							bind:value={parameters.dihedral}
 							on:change={handleUpdateParameters}
 							disabled={isGenerating}
+							class="param-slider"
 						/>
-					</label>
-				</div>
-
-				{#if componentType === 'tail_assembly'}
-					<div class="param-group">
-						<label>
-							<input
-								type="checkbox"
-								bind:checked={parameters.hasVerticalStabilizer}
-								on:change={handleUpdateParameters}
-								disabled={isGenerating}
-							/>
-							Vertical Stabilizer
-						</label>
-
-						<label>
-							<input
-								type="checkbox"
-								bind:checked={parameters.hasHorizontalStabilizer}
-								on:change={handleUpdateParameters}
-								disabled={isGenerating}
-							/>
-							Horizontal Stabilizer
-						</label>
+						<div class="slider-marks">
+							<span class="mark">-15</span>
+							<span class="mark">0</span>
+							<span class="mark">15</span>
+						</div>
 					</div>
-				{/if}
-			{/if}
+				</div>
+			</div>
 
-			{#if componentType === 'fuselage'}
-				<div class="param-group">
-					<label>
-						Fuselage Type
-						<select
-							bind:value={parameters.fuselageType}
+			{#if componentType === 'tail_assembly'}
+				<div class="control-group">
+					<div class="group-label">STABILIZER CONFIG</div>
+
+					<label class="checkbox-control">
+						<input
+							type="checkbox"
+							bind:checked={parameters.hasVerticalStabilizer}
 							on:change={handleUpdateParameters}
 							disabled={isGenerating}
-						>
-							<option value="commercial">Commercial</option>
-							<option value="fighter">Fighter Jet</option>
-							<option value="cargo">Cargo</option>
-							<option value="private">Private</option>
-						</select>
+						/>
+						<span class="checkbox-label">
+							<svg viewBox="0 0 16 16" fill="none" class="check-icon">
+								<path d="M4 8L7 11L12 5" stroke="currentColor" stroke-width="2"/>
+							</svg>
+							VERTICAL STABILIZER
+						</span>
 					</label>
 
-					<label>
-						Length: {(parameters.fuselageLength || 0).toFixed(1)}m
+					<label class="checkbox-control">
+						<input
+							type="checkbox"
+							bind:checked={parameters.hasHorizontalStabilizer}
+							on:change={handleUpdateParameters}
+							disabled={isGenerating}
+						/>
+						<span class="checkbox-label">
+							<svg viewBox="0 0 16 16" fill="none" class="check-icon">
+								<path d="M4 8L7 11L12 5" stroke="currentColor" stroke-width="2"/>
+							</svg>
+							HORIZONTAL STABILIZER
+						</span>
+					</label>
+				</div>
+			{/if}
+		{/if}
+
+		{#if componentType === 'fuselage'}
+			<div class="control-group">
+				<div class="group-label">FUSELAGE CONFIGURATION</div>
+
+				<div class="param-control">
+					<div class="param-header">
+						<label class="param-label">TYPE</label>
+						<span class="param-code">FS-01</span>
+					</div>
+					<select
+						bind:value={parameters.fuselageType}
+						on:change={handleUpdateParameters}
+						disabled={isGenerating}
+						class="param-select"
+					>
+						<option value="commercial">COMMERCIAL</option>
+						<option value="fighter">FIGHTER JET</option>
+						<option value="cargo">CARGO</option>
+						<option value="private">PRIVATE</option>
+					</select>
+				</div>
+
+				<div class="param-control">
+					<div class="param-header">
+						<label class="param-label">LENGTH</label>
+						<div class="param-value-display">
+							<span class="value">{(parameters.fuselageLength || 0).toFixed(2)}</span>
+							<span class="unit">m</span>
+						</div>
+					</div>
+					<div class="param-slider-container">
 						<input
 							type="range"
 							min="4"
@@ -364,11 +445,25 @@
 							bind:value={parameters.fuselageLength}
 							on:change={handleUpdateParameters}
 							disabled={isGenerating}
+							class="param-slider"
 						/>
-					</label>
+						<div class="slider-marks">
+							<span class="mark">4.0</span>
+							<span class="mark">12.0</span>
+							<span class="mark">20.0</span>
+						</div>
+					</div>
+				</div>
 
-					<label>
-						Diameter: {(parameters.fuselageDiameter || 0).toFixed(1)}m
+				<div class="param-control">
+					<div class="param-header">
+						<label class="param-label">DIAMETER</label>
+						<div class="param-value-display">
+							<span class="value">{(parameters.fuselageDiameter || 0).toFixed(2)}</span>
+							<span class="unit">m</span>
+						</div>
+					</div>
+					<div class="param-slider-container">
 						<input
 							type="range"
 							min="0.5"
@@ -377,11 +472,25 @@
 							bind:value={parameters.fuselageDiameter}
 							on:change={handleUpdateParameters}
 							disabled={isGenerating}
+							class="param-slider"
 						/>
-					</label>
+						<div class="slider-marks">
+							<span class="mark">0.5</span>
+							<span class="mark">1.75</span>
+							<span class="mark">3.0</span>
+						</div>
+					</div>
+				</div>
 
-					<label>
-						Thickness: {parameters.thickness.toFixed(0)}%
+				<div class="param-control">
+					<div class="param-header">
+						<label class="param-label">THICKNESS</label>
+						<div class="param-value-display">
+							<span class="value">{parameters.thickness.toFixed(0)}</span>
+							<span class="unit">%</span>
+						</div>
+					</div>
+					<div class="param-slider-container">
 						<input
 							type="range"
 							min="70"
@@ -390,15 +499,31 @@
 							bind:value={parameters.thickness}
 							on:change={handleUpdateParameters}
 							disabled={isGenerating}
+							class="param-slider"
 						/>
-					</label>
+						<div class="slider-marks">
+							<span class="mark">70</span>
+							<span class="mark">85</span>
+							<span class="mark">100</span>
+						</div>
+					</div>
 				</div>
-			{/if}
+			</div>
+		{/if}
 
-			{#if componentType === 'engines'}
-				<div class="param-group">
-					<label>
-						Length: {(parameters.engineLength || 2.0).toFixed(1)}m
+		{#if componentType === 'engines'}
+			<div class="control-group">
+				<div class="group-label">ENGINE CONFIGURATION</div>
+
+				<div class="param-control">
+					<div class="param-header">
+						<label class="param-label">LENGTH</label>
+						<div class="param-value-display">
+							<span class="value">{(parameters.engineLength || 2.0).toFixed(2)}</span>
+							<span class="unit">m</span>
+						</div>
+					</div>
+					<div class="param-slider-container">
 						<input
 							type="range"
 							min="1.5"
@@ -407,11 +532,25 @@
 							bind:value={parameters.engineLength}
 							on:change={handleUpdateParameters}
 							disabled={isGenerating}
+							class="param-slider"
 						/>
-					</label>
+						<div class="slider-marks">
+							<span class="mark">1.5</span>
+							<span class="mark">2.25</span>
+							<span class="mark">3.0</span>
+						</div>
+					</div>
+				</div>
 
-					<label>
-						Diameter: {(parameters.engineDiameter || 0.5).toFixed(1)}m
+				<div class="param-control">
+					<div class="param-header">
+						<label class="param-label">DIAMETER</label>
+						<div class="param-value-display">
+							<span class="value">{(parameters.engineDiameter || 0.5).toFixed(2)}</span>
+							<span class="unit">m</span>
+						</div>
+					</div>
+					<div class="param-slider-container">
 						<input
 							type="range"
 							min="0.3"
@@ -420,282 +559,342 @@
 							bind:value={parameters.engineDiameter}
 							on:change={handleUpdateParameters}
 							disabled={isGenerating}
+							class="param-slider"
 						/>
-					</label>
+						<div class="slider-marks">
+							<span class="mark">0.30</span>
+							<span class="mark">0.55</span>
+							<span class="mark">0.80</span>
+						</div>
+					</div>
 				</div>
-			{/if}
-		</div>
+			</div>
+		{/if}
+	</div>
 </div>
 
 <style>
 	.component-editor {
 		display: flex;
 		flex-direction: column;
-		gap: 2rem;
+		gap: var(--space-5);
 	}
 
-	.generate-section {
-		padding: 1.5rem;
-		background: #1e293b;
-		border: 2px solid #334155;
-		border-radius: 0.75rem;
+	/* ERROR PANEL */
+	.error-panel {
+		display: flex;
+		gap: var(--space-3);
+		padding: var(--space-4);
+		background: rgba(239, 83, 80, 0.1);
+		border: 1px solid var(--red-error);
+		border-left: 3px solid var(--red-error);
 	}
 
-	.generate-section h3 {
-		margin: 0 0 0.5rem;
-		font-size: 1.125rem;
-		font-weight: 600;
-		color: #f1f5f9;
+	.error-panel svg {
+		width: 20px;
+		height: 20px;
+		color: var(--red-error);
+		flex-shrink: 0;
+	}
+
+	.error-content {
+		flex: 1;
+	}
+
+	.error-label {
+		display: block;
+		font-size: 0.625rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		color: var(--red-error);
+		margin-bottom: var(--space-1);
+	}
+
+	.error-content p {
+		font-size: 0.8125rem;
+		color: var(--gray-200);
+		margin: 0;
+		line-height: 1.4;
+	}
+
+	/* GENERATING PANEL */
+	.generating-panel {
+		display: flex;
+		gap: var(--space-3);
+		padding: var(--space-4);
+		background: rgba(255, 167, 38, 0.1);
+		border: 1px solid var(--amber-warning);
+		border-left: 3px solid var(--amber-warning);
+	}
+
+	.generating-spinner {
+		width: 20px;
+		height: 20px;
+		border: 2px solid var(--amber-warning);
+		border-top-color: transparent;
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
+		flex-shrink: 0;
+	}
+
+	@keyframes spin {
+		to { transform: rotate(360deg); }
+	}
+
+	.generating-content {
+		flex: 1;
+	}
+
+	.generating-label {
+		display: block;
+		font-size: 0.625rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		color: var(--amber-warning);
+		margin-bottom: var(--space-1);
+	}
+
+	.generating-content p {
+		font-size: 0.8125rem;
+		color: var(--gray-200);
+		margin: 0;
 		text-transform: capitalize;
 	}
 
-	.hint {
-		margin: 0 0 1rem;
-		font-size: 0.875rem;
-		color: #94a3b8;
-	}
-
-	.prompt-section {
+	/* CONTROLS SECTION */
+	.controls-section {
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
+		gap: var(--space-5);
 	}
 
-	label {
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: #f1f5f9;
-	}
-
-	textarea {
-		max-width: 700px;
-		width: 100%;
-		min-width: 300px;
-		padding: 0.875rem;
-		background: #1e293b;
-		border: 2px solid #334155;
-		border-radius: 0.5rem;
-		color: #f1f5f9;
-		font-size: 0.875rem;
-		resize: both;
-		font-family: inherit;
-		transition: border-color 0.2s;
-	}
-
-	textarea:focus {
-		outline: none;
-		border-color: #3b82f6;
-	}
-
-	textarea::placeholder {
-		color: #64748b;
-	}
-
-	.generate-btn {
-		padding: 0.875rem 1.5rem;
-		background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-		color: white;
-		border: none;
-		border-radius: 0.5rem;
-		font-weight: 600;
-		font-size: 0.875rem;
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-
-	.generate-btn:not(:disabled):hover {
-		transform: translateY(-2px);
-		box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
-	}
-
-	.generate-btn:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-		transform: none;
-	}
-
-	.error-message {
-		padding: 0.875rem;
-		background: rgba(239, 68, 68, 0.1);
-		border: 2px solid #ef4444;
-		border-radius: 0.5rem;
-		color: #fca5a5;
-		font-size: 0.875rem;
-	}
-
-	.examples-section h3 {
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: #94a3b8;
-		margin: 0 0 1rem;
-	}
-
-	.examples-grid {
-		display: grid;
-		gap: 0.75rem;
-	}
-
-	.example-btn {
-		padding: 0.875rem;
-		background: #1e293b;
-		border: 2px solid #334155;
-		border-radius: 0.5rem;
-		color: #cbd5e1;
-		font-size: 0.8125rem;
-		text-align: left;
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-
-	.example-btn:not(:disabled):hover {
-		border-color: #3b82f6;
-		color: #f1f5f9;
-		transform: translateX(4px);
-	}
-
-	.example-btn:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-
-	.component-info {
-		padding: 1.5rem;
-		background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-		border-radius: 0.75rem;
-		color: white;
-	}
-
-	.component-info h3 {
-		margin: 0;
-		font-size: 1rem;
-		font-weight: 600;
-	}
-
-	.component-name {
-		margin: 0.5rem 0 0.25rem;
-		font-size: 1.125rem;
-		font-weight: 700;
-	}
-
-	.component-detail {
-		margin: 0;
-		font-size: 0.875rem;
-		opacity: 0.9;
-	}
-
-	.toggle-sliders-btn {
-		margin-top: 1rem;
-		padding: 0.625rem 1rem;
-		background: rgba(255, 255, 255, 0.2);
-		border: 1px solid rgba(255, 255, 255, 0.3);
-		border-radius: 0.375rem;
-		color: white;
-		font-size: 0.8125rem;
-		font-weight: 500;
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-
-	.toggle-sliders-btn:hover {
-		background: rgba(255, 255, 255, 0.3);
-		border-color: rgba(255, 255, 255, 0.5);
-	}
-
-	.sliders-section {
-		padding: 1.5rem;
-		background: #1e293b;
-		border: 2px solid #334155;
-		border-radius: 0.75rem;
-	}
-
-	.sliders-section h3 {
-		margin: 0 0 1.25rem;
-		font-size: 1rem;
-		font-weight: 600;
-		color: #f1f5f9;
-	}
-
-	.param-group {
+	.section-title {
 		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	.param-group label {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-		font-size: 0.8125rem;
-		font-weight: 500;
-		color: #cbd5e1;
-	}
-
-	.param-group select {
-		padding: 0.625rem;
-		background: #0f172a;
-		border: 2px solid #334155;
-		border-radius: 0.375rem;
-		color: #f1f5f9;
-		font-size: 0.875rem;
-		cursor: pointer;
-		transition: border-color 0.2s;
-	}
-
-	.param-group select:focus {
-		outline: none;
-		border-color: #3b82f6;
-	}
-
-	.param-group input[type='range'] {
-		-webkit-appearance: none;
-		appearance: none;
-		width: 100%;
-		height: 6px;
-		background: #334155;
-		border-radius: 3px;
-		outline: none;
-		cursor: pointer;
-	}
-
-	.param-group input[type='range']::-webkit-slider-thumb {
-		-webkit-appearance: none;
-		appearance: none;
-		width: 18px;
-		height: 18px;
-		background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-		border-radius: 50%;
-		cursor: pointer;
-		transition: transform 0.2s;
-	}
-
-	.param-group input[type='range']::-webkit-slider-thumb:hover {
-		transform: scale(1.2);
-	}
-
-	.param-group input[type='range']::-moz-range-thumb {
-		width: 18px;
-		height: 18px;
-		background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-		border: none;
-		border-radius: 50%;
-		cursor: pointer;
-		transition: transform 0.2s;
-	}
-
-	.param-group input[type='range']::-moz-range-thumb:hover {
-		transform: scale(1.2);
-	}
-
-	.param-group input[type='checkbox'] {
-		width: 18px;
-		height: 18px;
-		margin-right: 0.5rem;
-		cursor: pointer;
-		accent-color: #3b82f6;
-	}
-
-	.param-group label:has(input[type='checkbox']) {
-		flex-direction: row;
 		align-items: center;
+		gap: var(--space-2);
+		padding-bottom: var(--space-3);
+		border-bottom: 1px solid var(--border-subtle);
+		font-size: 0.625rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		color: var(--gray-400);
+	}
+
+	.section-title svg {
+		width: 14px;
+		height: 14px;
+		color: var(--cyan-500);
+	}
+
+	/* CONTROL GROUP */
+	.control-group {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+		padding: var(--space-4);
+		background: var(--blueprint-surface);
+		border: 1px solid var(--border-subtle);
+	}
+
+	.group-label {
+		font-size: 0.5625rem;
+		font-weight: 700;
+		letter-spacing: 0.15em;
+		color: var(--cyan-400);
+		padding-bottom: var(--space-2);
+		border-bottom: 1px solid var(--border-subtle);
+	}
+
+	/* PARAMETER CONTROLS */
+	.param-control {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.param-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.param-label {
+		font-size: 0.625rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		color: var(--gray-300);
+	}
+
+	.param-code {
+		font-family: var(--font-technical);
+		font-size: 0.5625rem;
+		font-weight: 700;
+		letter-spacing: 0.05em;
+		color: var(--gray-500);
+	}
+
+	.param-value-display {
+		display: flex;
+		align-items: baseline;
+		gap: var(--space-1);
+		font-family: var(--font-technical);
+	}
+
+	.param-value-display .value {
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: var(--cyan-400);
+	}
+
+	.param-value-display .unit {
+		font-size: 0.625rem;
+		color: var(--gray-500);
+	}
+
+	/* SELECT */
+	.param-select {
+		padding: var(--space-2) var(--space-3);
+		background: var(--blueprint-bg);
+		border: 1px solid var(--border-subtle);
+		color: var(--gray-100);
+		font-size: 0.75rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.param-select:hover:not(:disabled) {
+		border-color: var(--cyan-600);
+	}
+
+	.param-select:focus {
+		outline: none;
+		border-color: var(--cyan-500);
+		box-shadow: 0 0 10px var(--cyan-glow);
+	}
+
+	.param-select:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	/* SLIDER */
+	.param-slider-container {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+	}
+
+	.param-slider {
+		-webkit-appearance: none;
+		appearance: none;
+		width: 100%;
+		height: 4px;
+		background: var(--blueprint-bg);
+		border: 1px solid var(--border-subtle);
+		border-radius: 2px;
+		outline: none;
+		cursor: pointer;
+		position: relative;
+	}
+
+	.param-slider::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		appearance: none;
+		width: 16px;
+		height: 16px;
+		background: var(--cyan-500);
+		border: 2px solid var(--blueprint-bg);
+		border-radius: 2px;
+		cursor: pointer;
+		box-shadow: 0 0 10px var(--cyan-glow);
+		transition: all 0.2s;
+	}
+
+	.param-slider::-webkit-slider-thumb:hover {
+		background: var(--cyan-400);
+		transform: scale(1.1);
+		box-shadow: 0 0 15px var(--cyan-glow);
+	}
+
+	.param-slider::-moz-range-thumb {
+		width: 16px;
+		height: 16px;
+		background: var(--cyan-500);
+		border: 2px solid var(--blueprint-bg);
+		border-radius: 2px;
+		cursor: pointer;
+		box-shadow: 0 0 10px var(--cyan-glow);
+		transition: all 0.2s;
+	}
+
+	.param-slider::-moz-range-thumb:hover {
+		background: var(--cyan-400);
+		transform: scale(1.1);
+		box-shadow: 0 0 15px var(--cyan-glow);
+	}
+
+	.param-slider:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.slider-marks {
+		display: flex;
+		justify-content: space-between;
+		padding: 0 var(--space-1);
+	}
+
+	.mark {
+		font-family: var(--font-technical);
+		font-size: 0.5625rem;
+		color: var(--gray-500);
+	}
+
+	/* CHECKBOX */
+	.checkbox-control {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		padding: var(--space-3);
+		background: var(--blueprint-bg);
+		border: 1px solid var(--border-subtle);
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.checkbox-control:hover:not(:has(input:disabled)) {
+		border-color: var(--cyan-600);
+		background: rgba(3, 169, 244, 0.05);
+	}
+
+	.checkbox-control input[type='checkbox'] {
+		width: 18px;
+		height: 18px;
+		margin: 0;
+		cursor: pointer;
+		accent-color: var(--cyan-500);
+		flex-shrink: 0;
+	}
+
+	.checkbox-control input[type='checkbox']:disabled {
+		cursor: not-allowed;
+		opacity: 0.5;
+	}
+
+	.checkbox-label {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		font-size: 0.6875rem;
+		font-weight: 600;
+		letter-spacing: 0.05em;
+		color: var(--gray-300);
+	}
+
+	.check-icon {
+		width: 12px;
+		height: 12px;
+		color: var(--cyan-500);
 	}
 </style>

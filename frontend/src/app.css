@@ -1,17 +1,67 @@
+/* AeroCraft Technical Blueprint Design System */
+
 :root {
-	--bg-primary: #0f172a;
-	--bg-secondary: #1e293b;
-	--bg-tertiary: #334155;
-	--text-primary: #f1f5f9;
-	--text-secondary: #cbd5e1;
-	--accent-primary: #3b82f6;
-	--accent-hover: #2563eb;
-	--border-color: #475569;
-	--success: #10b981;
-	--warning: #f59e0b;
-	--error: #ef4444;
+	/* Blueprint Color Palette */
+	--blueprint-bg: #0a1628;
+	--blueprint-bg-secondary: #0f1f36;
+	--blueprint-surface: #152841;
+	--blueprint-surface-elevated: #1a324d;
+
+	/* Technical Blues & Cyans */
+	--cyan-100: #e0f7ff;
+	--cyan-200: #b3e5fc;
+	--cyan-300: #4fc3f7;
+	--cyan-400: #29b6f6;
+	--cyan-500: #03a9f4;
+	--cyan-600: #039be5;
+	--cyan-700: #0288d1;
+	--cyan-glow: rgba(3, 169, 244, 0.4);
+
+	/* Accent Colors */
+	--amber-warning: #ffa726;
+	--amber-glow: rgba(255, 167, 38, 0.3);
+	--green-success: #66bb6a;
+	--green-glow: rgba(102, 187, 106, 0.3);
+	--red-error: #ef5350;
+	--red-glow: rgba(239, 83, 80, 0.3);
+
+	/* Technical Grays */
+	--gray-100: #f5f7fa;
+	--gray-200: #e4e9f0;
+	--gray-300: #b8c5d6;
+	--gray-400: #8899ac;
+	--gray-500: #5a6c7d;
+	--gray-600: #3d4f5d;
+	--gray-700: #2c3e50;
+
+	/* Grid & Lines */
+	--grid-line: rgba(3, 169, 244, 0.08);
+	--grid-line-major: rgba(3, 169, 244, 0.15);
+	--border-technical: rgba(3, 169, 244, 0.3);
+	--border-subtle: rgba(255, 255, 255, 0.1);
+
+	/* Typography */
+	--font-technical: 'Roboto Mono', 'Consolas', 'Monaco', monospace;
+	--font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+	/* Shadows & Glows */
+	--shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.4);
+	--shadow-deep: 0 8px 24px rgba(0, 0, 0, 0.5);
+	--glow-cyan: 0 0 20px var(--cyan-glow);
+	--glow-amber: 0 0 20px var(--amber-glow);
+	--glow-green: 0 0 20px var(--green-glow);
+
+	/* Spacing System (based on 8px grid) */
+	--space-1: 0.25rem;  /* 4px */
+	--space-2: 0.5rem;   /* 8px */
+	--space-3: 0.75rem;  /* 12px */
+	--space-4: 1rem;     /* 16px */
+	--space-5: 1.5rem;   /* 24px */
+	--space-6: 2rem;     /* 32px */
+	--space-8: 3rem;     /* 48px */
 }
 
+/* Global Resets */
 * {
 	box-sizing: border-box;
 	margin: 0;
@@ -20,18 +70,45 @@
 
 body {
 	margin: 0;
-	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-		'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-		sans-serif;
+	font-family: var(--font-display);
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
-	background: var(--bg-primary);
-	color: var(--text-primary);
+	background: var(--blueprint-bg);
+	color: var(--gray-100);
 	overflow: hidden;
+	position: relative;
+}
+
+/* Blueprint Grid Background */
+body::before {
+	content: '';
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-image:
+		linear-gradient(var(--grid-line) 1px, transparent 1px),
+		linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
+		linear-gradient(var(--grid-line-major) 1px, transparent 1px),
+		linear-gradient(90deg, var(--grid-line-major) 1px, transparent 1px);
+	background-size:
+		20px 20px,
+		20px 20px,
+		100px 100px,
+		100px 100px;
+	background-position:
+		-1px -1px,
+		-1px -1px,
+		-1px -1px,
+		-1px -1px;
+	pointer-events: none;
+	z-index: 0;
+	opacity: 0.5;
 }
 
 code {
-	font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+	font-family: var(--font-technical);
 }
 
 button {
@@ -41,4 +118,69 @@ button {
 
 input, textarea, select {
 	font-family: inherit;
+}
+
+/* Technical Text Styles */
+.text-technical {
+	font-family: var(--font-technical);
+	letter-spacing: 0.05em;
+}
+
+.text-label {
+	font-size: 0.6875rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	color: var(--cyan-300);
+}
+
+.text-value {
+	font-family: var(--font-technical);
+	font-size: 1.25rem;
+	font-weight: 500;
+	color: var(--gray-100);
+}
+
+/* Utility Classes */
+.glow-cyan {
+	box-shadow: var(--glow-cyan);
+}
+
+.glow-amber {
+	box-shadow: var(--glow-amber);
+}
+
+.glow-green {
+	box-shadow: var(--glow-green);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+::-webkit-scrollbar-track {
+	background: var(--blueprint-surface);
+}
+
+::-webkit-scrollbar-thumb {
+	background: var(--cyan-700);
+	border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: var(--cyan-600);
+}
+
+/* Selection */
+::selection {
+	background: var(--cyan-600);
+	color: white;
+}
+
+/* Focus Styles */
+*:focus-visible {
+	outline: 2px solid var(--cyan-500);
+	outline-offset: 2px;
 }
