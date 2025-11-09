@@ -1,7 +1,7 @@
 # AeroCraft - AI-Powered Aerospace CAD Web Application
 
 A full-stack web application for generating, modifying, and exporting 3D CAD models of aerospace components using AI.
-Demo video: https://youtu.be/xMromFDNgXw
+- Demo video: https://youtu.be/xMromFDNgXw
 
 ## Tech Stack
 
