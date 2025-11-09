@@ -189,8 +189,7 @@
 					'wings',
 					new THREE.Vector3(0, 0.5, 0)  // Centered at fuselage
 				);
-				// Rotate wing to be perpendicular to fuselage
-				rightWing.rotation.y = Math.PI / 2;  // 90 degrees around Y axis
+				// Wings now generated in correct orientation - no rotation needed
 				rightWing.position.z = wingOffset;  // Outside fuselage surface
 				modelMeshes.add(rightWing);
 
@@ -201,7 +200,6 @@
 					opacity: 0.2
 				});
 				const rightWireframeMesh = new THREE.Mesh(rightGeom.clone(), rightWireframe);
-				rightWireframeMesh.rotation.copy(rightWing.rotation);
 				rightWireframeMesh.position.copy(rightWing.position);
 				modelMeshes.add(rightWireframeMesh);
 
@@ -211,9 +209,8 @@
 					'wings',
 					new THREE.Vector3(0, 0.5, 0)  // Centered at fuselage
 				);
-				// Rotate and mirror for left wing
-				leftWing.rotation.y = Math.PI / 2;  // 90 degrees around Y axis
-				leftWing.scale.x = -1;  // Mirror across X
+				// Wings now generated in correct orientation - just mirror for left side
+				leftWing.scale.z = -1;  // Mirror across Z for left wing
 				leftWing.position.z = -wingOffset;  // Outside fuselage surface
 				modelMeshes.add(leftWing);
 
@@ -224,8 +221,7 @@
 					opacity: 0.2
 				});
 				const leftWireframeMesh = new THREE.Mesh(leftGeom.clone(), leftWireframe);
-				leftWireframeMesh.rotation.copy(leftWing.rotation);
-				leftWireframeMesh.scale.x = -1;
+				leftWireframeMesh.scale.z = -1;  // Mirror across Z for left wing
 				leftWireframeMesh.position.copy(leftWing.position);
 				modelMeshes.add(leftWireframeMesh);
 			}

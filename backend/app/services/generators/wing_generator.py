@@ -260,39 +260,40 @@ class WingGenerator(ComponentGenerator):
         faces = []
 
         # Generate vertices for upper and lower surfaces (single wing half only)
+        # COORDINATE SYSTEM: X=chord (front-back), Y=thickness (up-down), Z=span (left-right)
         for i in range(num_span):
             t = i / (num_span - 1)  # 0 to 1 from root to tip
 
-            # Current span position (only positive Y - single wing half)
-            y = half_span * t
-            y_dihedral = y * np.sin(dihedral_rad)
-            z_dihedral = y * (1 - np.cos(dihedral_rad))
+            # Current span position (along Z-axis for left-right extension)
+            z = half_span * t
+            z_dihedral = z * np.cos(dihedral_rad)
+            y_dihedral = z * np.sin(dihedral_rad)
 
             # Chord at this span position (linear taper)
             chord = root_chord + (tip_chord - root_chord) * t
 
-            # Sweep offset
-            x_sweep = y * np.tan(sweep_rad)
+            # Sweep offset (along X-axis)
+            x_sweep = z * np.tan(sweep_rad)
 
             # Generate airfoil profile at this span position
             for j in range(num_chord):
                 x_chord = (j / (num_chord - 1))  # 0 to 1 along chord
                 x = x_sweep + x_chord * chord - root_chord / 2  # Center the wing
 
-                # Simple airfoil shape (approximation)
+                # Simple airfoil shape (approximation) - thickness along Y-axis
                 if x_chord < 0.3:
-                    z_upper = thickness_ratio * chord * (0.6 * x_chord / 0.3)
+                    y_upper = thickness_ratio * chord * (0.6 * x_chord / 0.3)
                 elif x_chord < 0.6:
-                    z_upper = thickness_ratio * chord * 0.6
+                    y_upper = thickness_ratio * chord * 0.6
                 else:
-                    z_upper = thickness_ratio * chord * 0.6 * (1 - x_chord) / 0.4
+                    y_upper = thickness_ratio * chord * 0.6 * (1 - x_chord) / 0.4
 
-                z_lower = -z_upper * 0.5  # Asymmetric airfoil
+                y_lower = -y_upper * 0.5  # Asymmetric airfoil
 
-                # Upper surface
-                vertices.append([x, y_dihedral, z_dihedral + z_upper])
+                # Upper surface: X=chord, Y=thickness (up), Z=span
+                vertices.append([x, y_dihedral + y_upper, z_dihedral])
                 # Lower surface
-                vertices.append([x, y_dihedral, z_dihedral + z_lower])
+                vertices.append([x, y_dihedral + y_lower, z_dihedral])
 
         vertices_array = np.array(vertices, dtype=np.float32)
 
