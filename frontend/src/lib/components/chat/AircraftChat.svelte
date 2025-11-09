@@ -87,13 +87,47 @@
 		}
 	}
 
+	// Convert backend snake_case to frontend camelCase
+	function convertBackendModel(backendModel: any): any {
+		return {
+			...backendModel,
+			parameters: {
+				wingType: backendModel.parameters.wing_type,
+				span: backendModel.parameters.span,
+				rootChord: backendModel.parameters.root_chord,
+				tipChord: backendModel.parameters.tip_chord,
+				sweepAngle: backendModel.parameters.sweep_angle,
+				thickness: backendModel.parameters.thickness,
+				dihedral: backendModel.parameters.dihedral,
+				fuselageType: backendModel.parameters.fuselage_type,
+				fuselageLength: backendModel.parameters.fuselage_length,
+				fuselageDiameter: backendModel.parameters.fuselage_diameter,
+				engineLength: backendModel.parameters.engine_length,
+				engineDiameter: backendModel.parameters.engine_diameter,
+				hasVerticalStabilizer: backendModel.parameters.has_vertical_stabilizer,
+				hasHorizontalStabilizer: backendModel.parameters.has_horizontal_stabilizer,
+				positionX: backendModel.parameters.position_x,
+				positionY: backendModel.parameters.position_y,
+				positionZ: backendModel.parameters.position_z
+			}
+		};
+	}
+
 	async function generateComponent(componentType: string, parameters: any) {
 		try {
-			// Use apiService to properly map snake_case to camelCase
-			const response = await apiService.updateParameters(parameters);
+			// Parameters from chat endpoint are already in snake_case, send directly
+			const response = await fetch('/api/generate/update-parameters', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ parameters })
+			});
 
-			if (response.success && response.model) {
-				setComponentModel(componentType, response.model);
+			const data = await response.json();
+
+			if (data.success && data.model) {
+				// Convert backend model to frontend format before storing
+				const frontendModel = convertBackendModel(data.model);
+				setComponentModel(componentType, frontendModel);
 			}
 		} catch (error) {
 			console.error(`Error generating ${componentType}:`, error);

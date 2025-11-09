@@ -51,20 +51,22 @@ function mapBackendToFrontend(backendData: any): Model3D {
 // Helper function to convert frontend camelCase to backend snake_case
 function mapFrontendToBackend(parameters: AeroParameters): any {
 	return {
-		wing_type: parameters.wingType,
-		span: parameters.span,
-		root_chord: parameters.rootChord,
-		tip_chord: parameters.tipChord,
-		sweep_angle: parameters.sweepAngle,
-		thickness: parameters.thickness,
-		dihedral: parameters.dihedral,
+		// Required fields - always include with fallback defaults
+		wing_type: parameters.wingType || 'straight',
+		span: parameters.span ?? 1.0,
+		root_chord: parameters.rootChord ?? 1.0,
+		tip_chord: parameters.tipChord ?? parameters.rootChord ?? 1.0,
+		sweep_angle: parameters.sweepAngle ?? 0,
+		thickness: parameters.thickness ?? 12,
+		dihedral: parameters.dihedral ?? 0,
+		// Optional fields - send as-is (can be null/undefined)
 		fuselage_type: parameters.fuselageType,
 		fuselage_length: parameters.fuselageLength,
 		fuselage_diameter: parameters.fuselageDiameter,
 		engine_length: parameters.engineLength,
 		engine_diameter: parameters.engineDiameter,
-		has_vertical_stabilizer: parameters.hasVerticalStabilizer,
-		has_horizontal_stabilizer: parameters.hasHorizontalStabilizer,
+		has_vertical_stabilizer: parameters.hasVerticalStabilizer || false,
+		has_horizontal_stabilizer: parameters.hasHorizontalStabilizer || false,
 		position_x: parameters.positionX || 0,
 		position_y: parameters.positionY || 0,
 		position_z: parameters.positionZ || 0
