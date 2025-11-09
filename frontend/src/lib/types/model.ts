@@ -8,9 +8,13 @@ export interface AeroParameters {
 	thickness: number;      // percentage (10 = 10%)
 	dihedral: number;       // degrees
 
-	// Fuselage parameters
+	// Fuselage parameters (ONLY for fuselage component)
 	fuselageLength?: number;
 	fuselageDiameter?: number;
+
+	// Engine parameters (ONLY for engine component)
+	engineLength?: number;
+	engineDiameter?: number;
 
 	// Other components
 	hasVerticalStabilizer: boolean;

@@ -17,6 +17,8 @@ function mapBackendToFrontend(backendData: any): Model3D {
 			dihedral: backendData.parameters.dihedral,
 			fuselageLength: backendData.parameters.fuselage_length,
 			fuselageDiameter: backendData.parameters.fuselage_diameter,
+			engineLength: backendData.parameters.engine_length,
+			engineDiameter: backendData.parameters.engine_diameter,
 			hasVerticalStabilizer: backendData.parameters.has_vertical_stabilizer,
 			hasHorizontalStabilizer: backendData.parameters.has_horizontal_stabilizer
 		},
@@ -54,6 +56,8 @@ function mapFrontendToBackend(parameters: AeroParameters): any {
 		dihedral: parameters.dihedral,
 		fuselage_length: parameters.fuselageLength,
 		fuselage_diameter: parameters.fuselageDiameter,
+		engine_length: parameters.engineLength,
+		engine_diameter: parameters.engineDiameter,
 		has_vertical_stabilizer: parameters.hasVerticalStabilizer,
 		has_horizontal_stabilizer: parameters.hasHorizontalStabilizer
 	};

@@ -71,12 +71,13 @@
 		const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x1e293b });
 		const ground = new THREE.Mesh(groundGeometry, groundMaterial);
 		ground.rotation.x = -Math.PI / 2;
-		ground.position.y = -0.01;
+		ground.position.y = -2.0;  // Move ground down to prevent clipping
 		ground.receiveShadow = true;
 		scene.add(ground);
 
-		// Axes helper
+		// Axes helper - positioned on the ground plane
 		const axesHelper = new THREE.AxesHelper(2);
+		axesHelper.position.y = -2.0;  // Match ground plane position
 		scene.add(axesHelper);
 
 		// Add model group to scene
@@ -148,31 +149,16 @@
 		modelMeshes.clear();
 
 		if (viewMode === 'assembly') {
-			// Show all components in assembly mode
+			// Show all components in assembly mode with proper positioning
 			const aircraftData = $aircraft;
 
-			// Wings - centered
-			if (aircraftData.wings.model) {
-				const { mesh, geometry } = createMeshFromModel(
-					aircraftData.wings.model,
-					'wings',
-					new THREE.Vector3(0, 0.5, 0)
-				);
-				modelMeshes.add(mesh);
-
-				// Add wireframe
-				const wireframeMaterial = new THREE.MeshBasicMaterial({
-					color: componentColors.wings,
-					wireframe: true,
-					transparent: true,
-					opacity: 0.2
-				});
-				const wireframe = new THREE.Mesh(geometry.clone(), wireframeMaterial);
-				wireframe.position.copy(mesh.position);
-				modelMeshes.add(wireframe);
+			// Calculate fuselage radius for wing positioning
+			let fuselageRadius = 0.7; // Default fallback
+			if (aircraftData.fuselage.model?.parameters?.fuselageDiameter) {
+				fuselageRadius = aircraftData.fuselage.model.parameters.fuselageDiameter / 2;
 			}
 
-			// Fuselage - centered
+			// Fuselage - centered (origin) - this is the reference point
 			if (aircraftData.fuselage.model) {
 				const { mesh, geometry } = createMeshFromModel(
 					aircraftData.fuselage.model,
@@ -193,13 +179,67 @@
 				modelMeshes.add(wireframe);
 			}
 
-			// Tail assembly - behind at tail position
+			// Wings - duplicate for left and right, extending from fuselage sides
+			if (aircraftData.wings.model) {
+				// Position wings at the fuselage surface (flat mounting edge, no gap)
+				const wingOffset = fuselageRadius;
+
+				// Right wing (positive Z) - extending to the right
+				const { mesh: rightWing, geometry: rightGeom } = createMeshFromModel(
+					aircraftData.wings.model,
+					'wings',
+					new THREE.Vector3(0, 0.5, 0)  // Centered at fuselage
+				);
+				// Rotate wing to be perpendicular to fuselage
+				rightWing.rotation.y = Math.PI / 2;  // 90 degrees around Y axis
+				rightWing.position.z = wingOffset;  // Outside fuselage surface
+				modelMeshes.add(rightWing);
+
+				const rightWireframe = new THREE.MeshBasicMaterial({
+					color: componentColors.wings,
+					wireframe: true,
+					transparent: true,
+					opacity: 0.2
+				});
+				const rightWireframeMesh = new THREE.Mesh(rightGeom.clone(), rightWireframe);
+				rightWireframeMesh.rotation.copy(rightWing.rotation);
+				rightWireframeMesh.position.copy(rightWing.position);
+				modelMeshes.add(rightWireframeMesh);
+
+				// Left wing (negative Z) - extending to the left
+				const { mesh: leftWing, geometry: leftGeom } = createMeshFromModel(
+					aircraftData.wings.model,
+					'wings',
+					new THREE.Vector3(0, 0.5, 0)  // Centered at fuselage
+				);
+				// Rotate and mirror for left wing
+				leftWing.rotation.y = Math.PI / 2;  // 90 degrees around Y axis
+				leftWing.scale.x = -1;  // Mirror across X
+				leftWing.position.z = -wingOffset;  // Outside fuselage surface
+				modelMeshes.add(leftWing);
+
+				const leftWireframe = new THREE.MeshBasicMaterial({
+					color: componentColors.wings,
+					wireframe: true,
+					transparent: true,
+					opacity: 0.2
+				});
+				const leftWireframeMesh = new THREE.Mesh(leftGeom.clone(), leftWireframe);
+				leftWireframeMesh.rotation.copy(leftWing.rotation);
+				leftWireframeMesh.scale.x = -1;
+				leftWireframeMesh.position.copy(leftWing.position);
+				modelMeshes.add(leftWireframeMesh);
+			}
+
+			// Tail assembly - at rear of fuselage
 			if (aircraftData.tail_assembly.model) {
 				const { mesh, geometry } = createMeshFromModel(
 					aircraftData.tail_assembly.model,
 					'tail_assembly',
-					new THREE.Vector3(0, 0.6, -1.2)
+					new THREE.Vector3(-2.5, 0.5, 0)  // Behind fuselage (negative X)
 				);
+				// Rotate tail to align with fuselage, keep at normal size
+				mesh.rotation.y = Math.PI / 2;  // 90 degrees to align with fuselage
 				modelMeshes.add(mesh);
 
 				// Add wireframe
@@ -210,32 +250,51 @@
 					opacity: 0.2
 				});
 				const wireframe = new THREE.Mesh(geometry.clone(), wireframeMaterial);
+				wireframe.rotation.copy(mesh.rotation);
 				wireframe.position.copy(mesh.position);
 				modelMeshes.add(wireframe);
 			}
 
-			// Engines - under wings
+			// Engines - duplicate for left and right, positioned under wings on either side
 			if (aircraftData.engines.model) {
-				const { mesh, geometry } = createMeshFromModel(
+				// Right engine (positive Z) - under right wing
+				const { mesh: rightEngine, geometry: rightEngGeom } = createMeshFromModel(
 					aircraftData.engines.model,
 					'engines',
-					new THREE.Vector3(0, 0.2, 0.3)
+					new THREE.Vector3(0.5, 0.2, 1.5)  // Under right wing (right side, lower)
 				);
-				modelMeshes.add(mesh);
+				modelMeshes.add(rightEngine);
 
-				// Add wireframe
-				const wireframeMaterial = new THREE.MeshBasicMaterial({
+				const rightEngWireframe = new THREE.MeshBasicMaterial({
 					color: componentColors.engines,
 					wireframe: true,
 					transparent: true,
 					opacity: 0.2
 				});
-				const wireframe = new THREE.Mesh(geometry.clone(), wireframeMaterial);
-				wireframe.position.copy(mesh.position);
-				modelMeshes.add(wireframe);
+				const rightEngWireframeMesh = new THREE.Mesh(rightEngGeom.clone(), rightEngWireframe);
+				rightEngWireframeMesh.position.copy(rightEngine.position);
+				modelMeshes.add(rightEngWireframeMesh);
+
+				// Left engine (negative Z) - under left wing
+				const { mesh: leftEngine, geometry: leftEngGeom } = createMeshFromModel(
+					aircraftData.engines.model,
+					'engines',
+					new THREE.Vector3(0.5, 0.2, -1.5)  // Under left wing (left side, lower)
+				);
+				modelMeshes.add(leftEngine);
+
+				const leftEngWireframe = new THREE.MeshBasicMaterial({
+					color: componentColors.engines,
+					wireframe: true,
+					transparent: true,
+					opacity: 0.2
+				});
+				const leftEngWireframeMesh = new THREE.Mesh(leftEngGeom.clone(), leftEngWireframe);
+				leftEngWireframeMesh.position.copy(leftEngine.position);
+				modelMeshes.add(leftEngWireframeMesh);
 			}
 
-			console.log('Assembly view: Showing', $allComponents.length, 'components');
+			console.log('Assembly view: Showing', $allComponents.length, 'components with proper positioning');
 		} else {
 			// Show only active component in edit mode
 			const activeComp = $aircraft[$activeComponent];

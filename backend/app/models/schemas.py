@@ -14,8 +14,13 @@ class AeroParameters(BaseModel):
     thickness: float = Field(gt=0, le=100, description="Thickness as percentage")
     dihedral: float = Field(ge=-45, le=45, description="Dihedral angle in degrees")
 
+    # Fuselage-specific parameters (ONLY for fuselage component)
     fuselage_length: Optional[float] = None
     fuselage_diameter: Optional[float] = None
+
+    # Engine-specific parameters (ONLY for engine component)
+    engine_length: Optional[float] = None
+    engine_diameter: Optional[float] = None
 
     has_vertical_stabilizer: bool = False
     has_horizontal_stabilizer: bool = False

@@ -22,41 +22,56 @@ IMPORTANT: First determine the component type from the prompt:
 
 For WINGS:
 - wing_type: "delta", "swept", "straight", or "tapered"
-- span: number (meters, typically 1.5-4m)
-- root_chord: number (meters)
-- tip_chord: number or null
+- span: number (meters, typically 8-12m for standard aircraft)
+- root_chord: number (meters, typically 2-4m)
+- tip_chord: number or null (for straight/rectangular wings, tip_chord = root_chord)
 - sweep_angle: number (degrees, 0-90)
 - thickness: number (10-15)
 - dihedral: number (degrees, -10 to 10)
 - fuselage_length: null
 - fuselage_diameter: null
+- engine_length: null
+- engine_diameter: null
 
-For FUSELAGE:
+For FUSELAGE (body/cabin of aircraft):
 - wing_type: "straight"
 - span: 0.8 (use small value)
-- root_chord: use the LENGTH from prompt (e.g., 5m length → root_chord: 5)
+- root_chord: same as fuselage_length (for proper alignment)
 - tip_chord: root_chord (cylindrical) or 70% of root_chord (tapered)
 - sweep_angle: 0
 - thickness: 80-100 (fuselage is thick/cylindrical)
 - dihedral: 0
-- fuselage_length: number from prompt
-- fuselage_diameter: number from prompt
+- fuselage_length: actual length from prompt (e.g., 5m → 5m) - realistic dimensions!
+- fuselage_diameter: realistic diameter based on type:
+  * Cylindrical/wide body: 1.0-1.2m
+  * Streamlined/tapered: 0.6-0.8m
+- engine_length: null
+- engine_diameter: null
 
-For TAIL ASSEMBLY:
+For TAIL ASSEMBLY (stabilizers at rear):
 - wing_type: "swept"
-- span: 1.5-2m
+- span: 4-6m (proportional to wing size, about 50-60% of main wing span)
+- root_chord: 1.5-2.5m (proportional to wing chord)
+- tip_chord: 0.8-1.5m
 - sweep_angle: 20-30
 - thickness: 10-12
 - has_vertical_stabilizer: true
 - has_horizontal_stabilizer: true
+- fuselage_length: null
+- fuselage_diameter: null
+- engine_length: null
+- engine_diameter: null
 
-For ENGINES:
+For ENGINES (turbine/nacelle):
 - wing_type: "straight"
 - span: 0.6
-- root_chord: engine length
-- tip_chord: engine length
+- root_chord: same as engine_length (for alignment)
+- tip_chord: same as engine_length
 - thickness: 90
-- fuselage_diameter: engine diameter
+- fuselage_length: null
+- fuselage_diameter: null
+- engine_length: actual length (typically 1.5-2.5m for realistic jet engine)
+- engine_diameter: actual diameter (typically 0.4-0.6m for realistic jet engine)
 
 ONLY return valid JSON matching these exact field names."""
 
